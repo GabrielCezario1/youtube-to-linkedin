@@ -1,7 +1,8 @@
 # Plano de Implementação — Tech Content Agent
 
-> **Versão:** 1.0
+> **Versão:** 1.1
 > **Data:** 2026-05-24
+> **Atualizado:** 2026-05-24 — Correções pós-exploração da API real do Agent Framework
 > **Referência:** [PRD_TechContentAgent.md](./PRD_TechContentAgent.md)
 
 ---
@@ -19,7 +20,7 @@
 └───────────────────────┬──────────────────────────────────────┘
                         │  HTTP (start/respond) + SignalR
 ┌───────────────────────▼──────────────────────────────────────┐
-│                  .NET 9 Minimal API                          │
+│                  .NET 10 Minimal API                         │
 │                                                              │
 │   POST   /api/workflow/start                                 │
 │   POST   /api/workflow/{sessionId}/respond                   │
@@ -28,12 +29,12 @@
 ├──────────────────────────────────────────────────────────────┤
 │               Microsoft Agent Framework                      │
 │                                                              │
-│   WorkflowDefinition                                         │
-│     ├── TranscriptNode   (YoutubeTranscriptApi)              │
-│     ├── SummaryNode      (LLM: pontos-chave)                 │
-│     └── LinkedInWriterNode                                   │
+│   WorkflowFactory (WorkflowBuilder)                          │
+│     ├── TranscriptExecutor   (YoutubeTranscriptApi)          │
+│     ├── SummaryExecutor      (LLM: pontos-chave)             │
+│     └── LinkedInWriterExecutor                               │
 │           ├── Auto mode:      gera diretamente               │
-│           └── Consulted mode: checkpoint → perguntas → gera  │
+│           └── Consulted mode: RequestPort → SendResponseAsync │
 │                                                              │
 ├──────────────────────────────────────────────────────────────┤
 │              Infraestrutura / Integrações                    │
@@ -56,14 +57,13 @@ youtube-to-linkedin/
 │
 ├── src/
 │   ├── backend/
-│   │   └── YoutubeToLinkedIn.Api/          ← .NET 9 Minimal API
-│   │       ├── Agents/
-│   │       │   ├── Nodes/
-│   │       │   │   ├── TranscriptNode.cs
-│   │       │   │   ├── SummaryNode.cs
-│   │       │   │   └── LinkedInWriterNode.cs
-│   │       │   ├── WorkflowDefinition.cs
-│   │       │   └── WorkflowSessionManager.cs
+│   │   └── YoutubeToLinkedIn.Api/          ← .NET 10 Minimal API
+│   │       ├── Executors/
+│   │       │   ├── TranscriptExecutor.cs
+│   │       │   ├── SummaryExecutor.cs
+│   │       │   └── LinkedInWriterExecutor.cs
+│   │       ├── WorkflowFactory.cs          ← WorkflowBuilder
+│   │       └── WorkflowSessionManager.cs   ← armazena StreamingRun handles
 │   │       ├── Hubs/
 │   │       │   └── WorkflowHub.cs          ← SignalR Hub
 │   │       ├── Endpoints/
@@ -302,9 +302,10 @@ Fase 1 (Scaffold)
 
 | Pacote | Uso |
 |---|---|
-| `Microsoft.Agents.AI` (prerelease) | Agent Framework — workflow + agentes |
+| `Microsoft.Agents.AI` (prerelease) | Agent Framework — agentes e modelo |
+| `Microsoft.Agents.AI.Workflows` (prerelease) | Agent Framework — workflow graph e executors |
 | `YoutubeTranscriptApi` | Extração de transcrição do YouTube |
-| `Azure.AI.OpenAI` ou `OpenAI` | Cliente LLM |
+| `Azure.AI.OpenAI` | Cliente LLM (Azure OpenAI) |
 | `Microsoft.AspNetCore.SignalR` | Streaming em tempo real + human-in-the-loop |
 
 ### Frontend (npm)
@@ -320,7 +321,13 @@ Fase 1 (Scaffold)
 
 | Ponto | Decisão |
 |---|---|
-| State management do workflow | `ConcurrentDictionary<string, WorkflowSession>` in-memory com `TaskCompletionSource` para pausar/retomar |
+| State management do workflow | `ConcurrentDictionary<string, StreamingRun>` in-memory — armazena handles do Agent Framework |
+| Human-in-the-loop | `RequestPort` nativo do framework + `SendResponseAsync()` — sem `TaskCompletionSource` manual |
+| Terminologia dos executores | `Executor` (alinhado com Agent Framework) — não `Node` como estava no plano original |
+| Criação do workflow | `WorkflowFactory.cs` com `WorkflowBuilder` — não `WorkflowDefinition.cs` |
+| Runtime | .NET 10 (já instalado na máquina) |
+| LLM provider | Azure OpenAI (decisão tomada na exploração) |
+| Angular | 21.2.8, standalone components |
 | Formato do `sessionId` | GUID gerado no backend no momento do `start` |
 | Timeout de sessão consultada | 10 minutos sem resposta → cancelar e emitir evento de timeout |
 | Extração de `videoId` | Regex cobrindo `?v=`, `youtu.be/`, `/shorts/` |
