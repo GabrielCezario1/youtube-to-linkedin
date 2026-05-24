@@ -19,7 +19,7 @@ public static class WorkflowStartEndpoint
             {
                 var transcript = await transcriptExecutor.ExecuteAsync(request.Url, sessionId);
                 var summary = await summaryExecutor.ExecuteAsync(transcript, sessionId);
-                await linkedInWriterExecutor.ExecuteAsync(summary, request.PostType, sessionId);
+                    await linkedInWriterExecutor.ExecuteAsync(summary, request.PostType, sessionId, request.Mode);
             }
             catch
             {

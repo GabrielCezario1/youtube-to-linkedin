@@ -3,7 +3,7 @@ import { Subject } from 'rxjs';
 import * as signalR from '@microsoft/signalr';
 
 export type StepId = 'transcript' | 'summary' | 'writing';
-export type StepStatus = 'pending' | 'in_progress' | 'completed' | 'error';
+export type StepStatus = 'pending' | 'in_progress' | 'completed' | 'error' | 'awaiting_input';
 
 export interface PostDraftResult {
   draft: string;
@@ -15,6 +15,7 @@ export interface WorkflowEvent {
   status: StepStatus;
   message?: string;
   result?: PostDraftResult;
+  questions?: string[];
 }
 
 export interface WorkflowEventEnvelope {

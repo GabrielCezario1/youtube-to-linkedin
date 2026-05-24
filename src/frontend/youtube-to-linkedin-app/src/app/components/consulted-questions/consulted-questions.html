@@ -1,0 +1,22 @@
+<div class="consulted-questions">
+  <h3>Personalize seu post</h3>
+  <p class="hint">Todas as perguntas são opcionais. Responda apenas o que quiser.</p>
+
+  <form (ngSubmit)="onSubmit()">
+    @for (question of questions; track $index) {
+      <div class="question-block">
+        <label [for]="'q' + $index">{{ question }}</label>
+        <textarea
+          [id]="'q' + $index"
+          [name]="'q' + $index"
+          [ngModel]="answers[$index]"
+          (ngModelChange)="onAnswerChange($index, $event)"
+          rows="3"
+          placeholder="Sua resposta (opcional)"
+        ></textarea>
+      </div>
+    }
+
+    <button type="submit">Continuar</button>
+  </form>
+</div>

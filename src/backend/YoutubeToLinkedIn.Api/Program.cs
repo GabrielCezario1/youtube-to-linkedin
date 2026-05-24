@@ -11,6 +11,8 @@ builder.Services.AddSingleton<TranscriptExecutor>();
 builder.Services.AddSingleton<PromptLoader>();
 builder.Services.AddSingleton<SummaryExecutor>();
 builder.Services.AddSingleton<LinkedInWriterExecutor>();
+builder.Services.AddSingleton<WorkflowSessionManager>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<WorkflowSessionManager>());
 
 builder.Services.AddSingleton(sp =>
 {
@@ -40,5 +42,6 @@ app.UseCors();
 
 app.MapHub<WorkflowHub>("/hubs/workflow");
 app.MapPost("/api/workflow/start", WorkflowStartEndpoint.Handle);
+app.MapPost("/api/workflow/{sessionId}/respond", WorkflowRespondEndpoint.Handle);
 
 app.Run();

@@ -53,10 +53,11 @@ export class WorkflowProgressComponent implements OnInit, OnDestroy {
 
   stepIcon(status: StepStatus): string {
     switch (status) {
-      case 'pending':     return '○';
-      case 'in_progress': return '⏳';
-      case 'completed':   return '✅';
-      case 'error':       return '❌';
+      case 'pending':        return '○';
+      case 'in_progress':    return '⏳';
+      case 'awaiting_input': return '⏸';
+      case 'completed':      return '✅';
+      case 'error':          return '❌';
     }
   }
 

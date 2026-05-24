@@ -5,7 +5,13 @@
     @for (step of steps; track step.id) {
       <li class="step" [class]="step.status">
         <span class="icon">{{ stepIcon(step.status) }}</span>
-        <span class="label">{{ step.label }}</span>
+        <span class="label">
+          @if (step.status === 'awaiting_input') {
+            Aguardando sua resposta...
+          } @else {
+            {{ step.label }}
+          }
+        </span>
       </li>
     }
   </ul>

@@ -14,84 +14,223 @@ public class LinkedInWriterExecutor
     private readonly PromptLoader _promptLoader;
     private readonly IHubContext<WorkflowHub> _hubContext;
     private readonly AzureOpenAIClient _openAiClient;
+    private readonly WorkflowSessionManager _sessionManager;
     private readonly string _modelId;
 
     public LinkedInWriterExecutor(
         PromptLoader promptLoader,
         IHubContext<WorkflowHub> hubContext,
         AzureOpenAIClient openAiClient,
+        WorkflowSessionManager sessionManager,
         IConfiguration configuration)
     {
         _promptLoader = promptLoader;
         _hubContext = hubContext;
         _openAiClient = openAiClient;
+        _sessionManager = sessionManager;
         _modelId = configuration["AzureOpenAI:ModelId"] ?? "gpt-4o-mini";
     }
 
-    public async Task<PostDraftResult> ExecuteAsync(string summary, string postType, string sessionId)
+    public Task<PostDraftResult> ExecuteAsync(string summary, string postType, string sessionId, string mode = "automatico")
+    {
+        return mode == "consultado"
+            ? ExecuteConsultedAsync(summary, postType, sessionId)
+            : ExecuteAutoAsync(summary, postType, sessionId);
+    }
+
+    // ── Automatic mode (Fase 4 behaviour, unchanged) ─────────────────────────
+
+    private async Task<PostDraftResult> ExecuteAutoAsync(string summary, string postType, string sessionId)
     {
         await SendWorkflowEvent(sessionId, "in_progress");
 
         try
         {
-            var systemPrompt = _promptLoader.GetPrompt("linkedin-writer-system");
-
-            var chatClient = _openAiClient.GetChatClient(_modelId);
-
             var userMessage = $"Tipo de post: {postType}\n\nResumo:\n{summary}";
-
-            var messages = new List<ChatMessage>
-            {
-                new SystemChatMessage(systemPrompt),
-                new UserChatMessage(userMessage)
-            };
-
-            var options = new ChatCompletionOptions
-            {
-                Temperature = 0.7f,
-                MaxOutputTokenCount = 1200
-            };
-
-            var response = await chatClient.CompleteChatAsync(messages, options);
-            var rawContent = response.Value.Content[0].Text.Trim();
-
-            // Strip optional ```json fences from the model response
-            if (rawContent.StartsWith("```"))
-            {
-                var firstNewline = rawContent.IndexOf('\n');
-                var lastFence = rawContent.LastIndexOf("```");
-                if (firstNewline >= 0 && lastFence > firstNewline)
-                    rawContent = rawContent[(firstNewline + 1)..lastFence].Trim();
-            }
-
-            var result = JsonSerializer.Deserialize<PostDraftResult>(
-                rawContent,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            if (result is null || string.IsNullOrWhiteSpace(result.Draft))
-                throw new InvalidOperationException("A resposta do modelo não contém um rascunho válido.");
-
+            var result = await GeneratePostAsync(userMessage, sessionId);
             await SendWorkflowEvent(sessionId, "completed", result: result);
             return result;
         }
         catch (RequestFailedException)
         {
-            await SendWorkflowEvent(sessionId, "error",
-                "Ocorreu um erro ao gerar o post. Tente novamente.");
+            await SendWorkflowEvent(sessionId, "error", "Ocorreu um erro ao gerar o post. Tente novamente.");
             throw;
         }
         catch (TaskCanceledException)
         {
-            await SendWorkflowEvent(sessionId, "error",
-                "Ocorreu um erro ao gerar o post. Tente novamente.");
+            await SendWorkflowEvent(sessionId, "error", "Ocorreu um erro ao gerar o post. Tente novamente.");
             throw;
         }
         catch (Exception)
         {
-            await SendWorkflowEvent(sessionId, "error",
-                "Ocorreu um erro ao gerar o post. Tente novamente.");
+            await SendWorkflowEvent(sessionId, "error", "Ocorreu um erro ao gerar o post. Tente novamente.");
             throw;
         }
+    }
+
+    // ── Consulted mode (Fase 5 human-in-the-loop) ────────────────────────────
+
+    private async Task<PostDraftResult> ExecuteConsultedAsync(string summary, string postType, string sessionId)
+    {
+        await SendWorkflowEvent(sessionId, "in_progress");
+
+        try
+        {
+            // Build question list: fixed + up to 3 dynamic
+            var questions = new List<string>(GetFixedQuestions(postType));
+            var dynamic = await GetDynamicQuestionsAsync(summary);
+            questions.AddRange(dynamic.Take(3));
+
+            // Register session and emit pause event
+            var tcs = new TaskCompletionSource<string[]>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _sessionManager.Register(sessionId, tcs, postType);
+            await SendWorkflowEventAwaitingInput(sessionId, questions);
+
+            // Wait for user answers (or timeout/cancellation)
+            string[] answers;
+            try
+            {
+                answers = await tcs.Task;
+            }
+            catch (OperationCanceledException)
+            {
+                await SendWorkflowEvent(sessionId, "error", "Sessão expirada. Inicie novamente.");
+                throw;
+            }
+
+            // Resume: emit in_progress, build enriched prompt, generate post
+            await SendWorkflowEvent(sessionId, "in_progress");
+
+            var filteredAnswers = answers
+                .Select((a, i) => (answer: a, index: i + 1))
+                .Where(x => !string.IsNullOrWhiteSpace(x.answer))
+                .Select(x => $"{x.index}. {x.answer.Trim()}")
+                .ToList();
+
+            var userMessage = filteredAnswers.Count > 0
+                ? $"Tipo de post: {postType}\n\nResumo:\n{summary}\n\nContexto adicional do autor:\n{string.Join("\n", filteredAnswers)}"
+                : $"Tipo de post: {postType}\n\nResumo:\n{summary}";
+
+            var result = await GeneratePostAsync(userMessage, sessionId);
+            await SendWorkflowEvent(sessionId, "completed", result: result);
+            return result;
+        }
+        catch (OperationCanceledException)
+        {
+            // Already handled above; re-throw to bubble up to Task.Run catch
+            throw;
+        }
+        catch (RequestFailedException)
+        {
+            await SendWorkflowEvent(sessionId, "error", "Ocorreu um erro ao gerar o post. Tente novamente.");
+            throw;
+        }
+        catch (Exception)
+        {
+            await SendWorkflowEvent(sessionId, "error", "Ocorreu um erro ao gerar o post. Tente novamente.");
+            throw;
+        }
+        finally
+        {
+            _sessionManager.Cleanup(sessionId);
+        }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private static IEnumerable<string> GetFixedQuestions(string postType) => postType switch
+    {
+        "storytelling" =>
+        [
+            "Qual foi o erro ou obstáculo principal?",
+            "Qual foi o aprendizado mais valioso?",
+            "Para quem é este post?"
+        ],
+        "lista-pratica" =>
+        [
+            "Algum item da lista tem contexto da sua experiência?",
+            "Para quem é este post?"
+        ],
+        "opiniao-provocativa" =>
+        [
+            "Qual é a crença comum que você quer questionar?",
+            "Você tem um dado ou exemplo concreto para reforçar?"
+        ],
+        _ => []
+    };
+
+    private async Task<IReadOnlyList<string>> GetDynamicQuestionsAsync(string summary)
+    {
+        try
+        {
+            var chatClient = _openAiClient.GetChatClient(_modelId);
+            var systemMsg = "Você é um assistente especialista em conteúdo para LinkedIn.";
+            var userMsg = $"""
+                Com base no resumo abaixo, gere de 1 a 3 perguntas curtas e específicas que ajudariam um criador de conteúdo a adicionar contexto pessoal ao post. Responda APENAS com um array JSON de strings, sem markdown, sem texto adicional.
+
+                Resumo:
+                {summary}
+                """;
+
+            var messages = new List<ChatMessage>
+            {
+                new SystemChatMessage(systemMsg),
+                new UserChatMessage(userMsg)
+            };
+
+            var options = new ChatCompletionOptions { Temperature = 0.2f, MaxOutputTokenCount = 256 };
+            var response = await chatClient.CompleteChatAsync(messages, options);
+            var raw = response.Value.Content[0].Text.Trim();
+
+            if (raw.StartsWith("```"))
+            {
+                var firstNewline = raw.IndexOf('\n');
+                var lastFence = raw.LastIndexOf("```");
+                if (firstNewline >= 0 && lastFence > firstNewline)
+                    raw = raw[(firstNewline + 1)..lastFence].Trim();
+            }
+
+            return JsonSerializer.Deserialize<List<string>>(raw) ?? [];
+        }
+        catch
+        {
+            // Fail silently — flow continues with fixed questions only
+            return [];
+        }
+    }
+
+    private async Task<PostDraftResult> GeneratePostAsync(string userMessage, string sessionId)
+    {
+        var systemPrompt = _promptLoader.GetPrompt("linkedin-writer-system");
+        var chatClient = _openAiClient.GetChatClient(_modelId);
+
+        var messages = new List<ChatMessage>
+        {
+            new SystemChatMessage(systemPrompt),
+            new UserChatMessage(userMessage)
+        };
+
+        var options = new ChatCompletionOptions { Temperature = 0.7f, MaxOutputTokenCount = 1200 };
+
+        var response = await chatClient.CompleteChatAsync(messages, options);
+        var rawContent = response.Value.Content[0].Text.Trim();
+
+        if (rawContent.StartsWith("```"))
+        {
+            var firstNewline = rawContent.IndexOf('\n');
+            var lastFence = rawContent.LastIndexOf("```");
+            if (firstNewline >= 0 && lastFence > firstNewline)
+                rawContent = rawContent[(firstNewline + 1)..lastFence].Trim();
+        }
+
+        var result = JsonSerializer.Deserialize<PostDraftResult>(
+            rawContent,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        if (result is null || string.IsNullOrWhiteSpace(result.Draft))
+            throw new InvalidOperationException("A resposta do modelo não contém um rascunho válido.");
+
+        return result;
     }
 
     private Task SendWorkflowEvent(
@@ -109,6 +248,12 @@ public class LinkedInWriterExecutor
         else
             payload = new { step = "writing", status };
 
+        return _hubContext.Clients.All.SendAsync("workflowEvent", sessionId, payload);
+    }
+
+    private Task SendWorkflowEventAwaitingInput(string sessionId, IReadOnlyList<string> questions)
+    {
+        var payload = new { step = "writing", status = "awaiting_input", questions };
         return _hubContext.Clients.All.SendAsync("workflowEvent", sessionId, payload);
     }
 }

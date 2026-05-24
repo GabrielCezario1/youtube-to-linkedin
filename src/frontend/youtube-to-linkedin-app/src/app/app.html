@@ -21,6 +21,13 @@
     [sessionId]="currentSessionId"
     (retry)="onRetry()"
   />
+  @if (consultedQuestions()) {
+    <app-consulted-questions
+      [questions]="consultedQuestions()!"
+      [sessionId]="currentSessionId"
+      (submitted)="onConsultedSubmitted()"
+    />
+  }
   @if (postDraft) {
     <app-post-draft
       [draft]="postDraft.draft"

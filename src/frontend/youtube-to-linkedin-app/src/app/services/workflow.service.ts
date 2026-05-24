@@ -23,4 +23,11 @@ export class WorkflowService {
       body
     );
   }
+
+  respond(sessionId: string, answers: string[]): Observable<void> {
+    return this.http.post<void>(
+      `https://localhost:5224/api/workflow/${sessionId}/respond`,
+      { answers }
+    );
+  }
 }
