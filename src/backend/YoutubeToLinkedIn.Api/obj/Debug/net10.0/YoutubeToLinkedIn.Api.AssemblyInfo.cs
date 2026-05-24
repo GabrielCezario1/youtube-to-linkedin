@@ -10,10 +10,11 @@
 using System;
 using System.Reflection;
 
+[assembly: Microsoft.Extensions.Configuration.UserSecrets.UserSecretsIdAttribute("8e6f5245-8970-4c81-9b75-aa30385709a2")]
 [assembly: System.Reflection.AssemblyCompanyAttribute("YoutubeToLinkedIn.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+87cd2538a25d595371b8ddcb318de38082d14e1b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0a819a3e92814c7f3fea4a21efcbab5c543c3b4d")]
 [assembly: System.Reflection.AssemblyProductAttribute("YoutubeToLinkedIn.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("YoutubeToLinkedIn.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

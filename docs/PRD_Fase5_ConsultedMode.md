@@ -236,9 +236,9 @@ Response: 200 OK (sem body)
   - Background task de expiração (10 min)
 - [ ] Estender `LinkedInWriterExecutor` para modo Consultado:
   - Gerar perguntas fixas por template
-  - Chamar LLM para gerar até 3 perguntas dinâmicas
-  - Pausar via `RequestPort`
-  - Retomar com as respostas e gerar o post
+  - Chamar LLM (via `Azure.AI.OpenAI` SDK diretamente) para gerar até 3 perguntas dinâmicas
+  - Pausar via `RequestPort` (Agent Framework)
+  - Retomar com as respostas e gerar o post via Azure OpenAI
 - [ ] Criar `WorkflowRespondEndpoint.cs`: `POST /api/workflow/{sessionId}/respond`
 - [ ] Registrar `WorkflowSessionManager` em `Program.cs` (singleton)
 

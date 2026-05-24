@@ -130,7 +130,7 @@ public record PostDraftResult(
 
 | # | Regra / Decisão | Justificativa |
 |---|---|---|
-| R1 | Prompt em **`Prompts/linkedin-writer-system.md`** | Mesmo padrão do SummaryExecutor; editável sem recompilar |
+| R1 | Prompt em **`Prompts/linkedin-writer-system.md`**, carregado via **`PromptLoader`** | Mesmo padrão do `SummaryExecutor`; editável sem recompilar; sem I/O repetido por requisição |
 | R2 | LLM retorna **JSON estruturado** `{ draft, templateUsed }` | Facilita parse e exibição separada do template usado |
 | R3 | Modo Auto: executor **não emite `awaiting_input`** | Responsabilidade única; modo Consultado é Fase 5 |
 | R4 | `postType` é passado no **user message**, não no system prompt | Permite reuso do mesmo system prompt para todos os tipos |
@@ -140,6 +140,7 @@ public record PostDraftResult(
 | R8 | Keyword no **hook (primeira linha)** | Regra de SEO da skill |
 | R9 | Tom: **primeira pessoa**, pessoal e direto | Regra da skill; autenticidade no LinkedIn |
 | R10 | `templateUsed` é informado pela IA no JSON | Exibido na UI para transparência ao usuário |
+| R11 | `LinkedInWriterExecutor` registrado como **Singleton** | Executor é stateless; consistente com `SummaryExecutor` e `TranscriptExecutor` |
 
 ---
 
@@ -182,11 +183,13 @@ public record PostDraftResult(
 
 - [ ] Criar `Prompts/linkedin-writer-system.md` com todas as regras da skill
 - [ ] Criar `PostDraftResult.cs` (record com `Draft` e `TemplateUsed`)
-- [ ] Criar `LinkedInWriterExecutor.cs` — modo Auto:
-  - Recebe resumo + tipo de post
-  - Monta prompt e chama Azure OpenAI
+- [ ] Criar `LinkedInWriterExecutor.cs` (Singleton) — modo Auto:
+  - Injeta `PromptLoader`, `IHubContext<WorkflowHub>` e `AzureOpenAIClient`
+  - Monta prompt via `PromptLoader.GetPrompt("linkedin-writer-system")` + tipo de post no user message
+  - Chama Azure OpenAI via `Azure.AI.OpenAI` SDK diretamente
   - Parseia JSON de resposta → `PostDraftResult`
   - Emite eventos SignalR
+- [ ] Registrar `LinkedInWriterExecutor` em `Program.cs` como Singleton
 - [ ] Encadear `LinkedInWriterExecutor` após `SummaryExecutor` no `WorkflowStartEndpoint` (sem WorkflowFactory)
 
 ### Frontend

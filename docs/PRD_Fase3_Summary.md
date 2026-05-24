@@ -78,14 +78,15 @@ Dado a transcrição bruta do vídeo, chamar o LLM (Azure OpenAI) para gerar um 
 ┌───────────────────────────────────────────────────┐
 │                Azure OpenAI                       │
 ├───────────────────────────────────────────────────┤
+│  SDK:          Azure.AI.OpenAI v2.1.0             │
 │  Modelo:       gpt-4o ou gpt-4o-mini              │
 │  Temperature:  0.3  (respostas consistentes)      │
 │  Max tokens:   1200 (suficiente para 8 pontos)    │
-│  Provider:     Azure OpenAI                       │
 │  Config:       appsettings.json                   │
 │                AzureOpenAI:Endpoint               │
-│                AzureOpenAI:ApiKey                 │
 │                AzureOpenAI:ModelId                │
+│  Segredos:     User Secrets (dev) / env var (prod)│
+│                AzureOpenAI:ApiKey                 │
 └───────────────────────────────────────────────────┘
 ```
 
@@ -105,7 +106,7 @@ Dado a transcrição bruta do vídeo, chamar o LLM (Azure OpenAI) para gerar um 
 
 | # | Regra / Decisão | Justificativa |
 |---|---|---|
-| R1 | Provider: **Azure OpenAI** | Decisão tomada na exploração; suporte nativo no Agent Framework |
+| R1 | Provider: **Azure OpenAI**, SDK: **`Azure.AI.OpenAI` v2.1.0** | Uso direto do SDK; sem abstrações do Agent Framework nas chamadas LLM |
 | R2 | Modelo: **gpt-4o-mini** por padrão (configurável) | Balanceia custo e qualidade para resumo |
 | R3 | Prompt armazenado em **`Prompts/summarizer-system.md`** | Editável sem recompilar; facilita iteração |
 | R4 | Prompt carregado no **startup** da aplicação | Evita I/O repetido em cada requisição |
@@ -115,6 +116,8 @@ Dado a transcrição bruta do vídeo, chamar o LLM (Azure OpenAI) para gerar um 
 | R8 | O resumo **não é exibido na UI** — trafega apenas entre executors | PRD principal não prevê exibição do resumo |
 | R9 | `SummaryExecutor` **não conhece o modo** (Auto/Consultado) | Responsabilidade única |
 | R10 | Transcrições longas: o modelo usa o contexto total | Sem truncagem no MVP; monitorar em uso real |
+| R11 | Prompts carregados via **`PromptLoader`** (singleton) | Serviço singleton registrado no startup; carrega todos os `.md` de `Prompts/`; extensível para fases futuras sem I/O repetido |
+| R12 | `SummaryExecutor` (e `TranscriptExecutor`) registrados como **Singleton** | Ambos são stateless; Singleton é o registro correto e elimina risco de scope disposal em fire-and-forget `Task.Run` |
 
 ---
 
@@ -167,19 +170,24 @@ Dado a transcrição bruta do vídeo, chamar o LLM (Azure OpenAI) para gerar um 
 
 ### Backend
 
-- [ ] Configurar cliente Azure OpenAI em `Program.cs` (injeção de dependência)
-- [ ] Criar arquivo `Prompts/summarizer-system.md` com instrução e formato de saída
-- [ ] Implementar carregamento dos prompts no startup
-- [ ] Criar `SummaryExecutor.cs`:
-  - Monta prompt (system + user com transcrição)
-  - Chama Azure OpenAI
+- [ ] Criar `Prompts/summarizer-system.md` com instrução e formato de saída
+- [ ] Criar `PromptLoader.cs` (Singleton): carrega todos os `.md` de `Prompts/` no startup e expõe via `GetPrompt(string name)`
+- [ ] Registrar `PromptLoader` em `Program.cs` como Singleton
+- [ ] Configurar `AzureOpenAIClient` em `Program.cs` como Singleton (pacote `Azure.AI.OpenAI`)
+- [ ] Migrar `TranscriptExecutor` de `AddScoped` para `AddSingleton` em `Program.cs`
+- [ ] Criar `SummaryExecutor.cs` (Singleton):
+  - Injeta `PromptLoader`, `IHubContext<WorkflowHub>` e `AzureOpenAIClient`
+  - Monta prompt: system via `PromptLoader.GetPrompt("summarizer-system")` + user com transcrição
+  - Chama Azure OpenAI via `Azure.AI.OpenAI` SDK diretamente
   - Retorna resposta como string
   - Trata exceções e emite eventos SignalR
 - [ ] Encadear `SummaryExecutor` após `TranscriptExecutor` no `WorkflowStartEndpoint` (sem WorkflowFactory)
+- [ ] Configurar `AzureOpenAI:Endpoint` e `AzureOpenAI:ModelId` em `appsettings.json`
+- [ ] Configurar `AzureOpenAI:ApiKey` via `dotnet user-secrets set "AzureOpenAI:ApiKey" "<valor>"`
 
 ### Frontend
 
-- [ ] Atualizar `WorkflowProgressComponent` para refletir etapa "summary"
+- [x] ~~Atualizar `WorkflowProgressComponent` para refletir etapa "summary"~~ (já implementado — `StepId` e `steps` já incluem `'summary'`)
 
 ---
 

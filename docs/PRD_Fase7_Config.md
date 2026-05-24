@@ -23,8 +23,11 @@ youtube-to-linkedin/
 ├── src/
 │   ├── backend/
 │   │   └── YoutubeToLinkedIn.Api/
-│   │       ├── appsettings.json       ← chaves de config (sem segredos)
-│   │       └── appsettings.Development.json  ← valores locais (gitignored)
+│   │       ├── appsettings.json            ← chaves de config (ApiKey vazia; usar User Secrets)
+│   │       ├── appsettings.Development.json  ← valores locais (gitignored)
+│   │       └── Prompts/
+│   │           ├── summarizer-system.md      ← prompt do SummaryExecutor
+│   │           └── linkedin-writer-system.md ← prompt do LinkedInWriterExecutor
 │   │
 │   └── frontend/
 │       └── youtube-to-linkedin-app/
@@ -43,7 +46,7 @@ youtube-to-linkedin/
 {
   "AzureOpenAI": {
     "Endpoint": "",
-    "ApiKey":   "",
+    "ApiKey":   "",    ← manter vazio; configurar via User Secrets (dev) ou variável de ambiente (prod)
     "ModelId":  "gpt-4o-mini"
   },
   "Workflow": {
@@ -82,9 +85,12 @@ BACKEND_URL=https://localhost:5001
 │                                                                 │
 │  ## Configuração                                                │
 │  1. Clonar o repositório                                        │
-│  2. Copiar appsettings.Development.json.example                 │
-│     e preencher as chaves                                       │
-│  3. Copiar .env.example → .env no frontend                      │
+│  2. Configurar a ApiKey via User Secrets:                       │
+│     cd src/backend/YoutubeToLinkedIn.Api                        │
+│     dotnet user-secrets init                                    │
+│     dotnet user-secrets set "AzureOpenAI:ApiKey" "<sua-chave>" │
+│  3. Preencher Endpoint e ModelId em appsettings.json            │
+│  4. Copiar .env.example → .env no frontend                      │
 │                                                                 │
 │  ## Rodando Localmente                                          │
 │  ### Backend                                                    │
@@ -151,14 +157,15 @@ Thumbs.db
 | R8 | Passos de configuração incluem **exemplo de comando** para cada etapa | Reduz fricção para executar o projeto |
 | R9 | `AllowedOrigins` no `appsettings.json` (não hardcoded em `Program.cs`) | CORS configurável por ambiente |
 | R10 | `ModelId` configurável via `appsettings.json` | Permite trocar entre `gpt-4o` e `gpt-4o-mini` sem recompilar |
+| R11 | `AzureOpenAI:ApiKey` configurada via **User Secrets** (`dotnet user-secrets`) em dev | Segredos nunca entram no repositório; consistente com a decisão da Fase 3 |
 
 ---
 
 ## Tarefas
 
-- [ ] Criar `appsettings.json` com estrutura de chaves (valores vazios para segredos)
-- [ ] Criar `appsettings.Development.json.example` como template preenchível
+- [ ] Criar `appsettings.json` com estrutura de chaves (ApiKey vazia; documentar uso de User Secrets)
 - [ ] Adicionar `appsettings.Development.json` ao `.gitignore`
+- [ ] Configurar `AzureOpenAI:ApiKey` via `dotnet user-secrets` (documentado no README)
 - [ ] Criar `.env.example` no frontend com `BACKEND_URL`
 - [ ] Criar/atualizar `.gitignore` raiz com todas as entradas obrigatórias
 - [ ] Criar `README.md` cobrindo: descrição, pré-requisitos, configuração, execução local, links para docs
