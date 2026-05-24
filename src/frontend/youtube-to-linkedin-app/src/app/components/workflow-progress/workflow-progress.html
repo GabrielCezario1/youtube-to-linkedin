@@ -1,0 +1,19 @@
+<div class="workflow-progress">
+  <h2>Processando vídeo...</h2>
+
+  <ul class="steps">
+    @for (step of steps; track step.id) {
+      <li class="step" [class]="step.status">
+        <span class="icon">{{ stepIcon(step.status) }}</span>
+        <span class="label">{{ step.label }}</span>
+      </li>
+    }
+  </ul>
+
+  @if (errorStep) {
+    <app-error-display
+      [message]="errorStep.errorMessage!"
+      (retry)="onRetry()"
+    />
+  }
+</div>

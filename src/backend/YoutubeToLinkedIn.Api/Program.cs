@@ -1,7 +1,10 @@
 using YoutubeToLinkedIn.Api.Endpoints;
+using YoutubeToLinkedIn.Api.Executors;
 using YoutubeToLinkedIn.Api.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddScoped<TranscriptExecutor>();
 
 builder.Services.AddCors(options =>
 {

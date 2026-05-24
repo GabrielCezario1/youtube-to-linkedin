@@ -164,10 +164,10 @@ Response: 200 OK (sem body)
 
 | Evento | Payload | Quando |
 |---|---|---|
-| `writing` | `{ step: "writing", status: "awaiting_input", questions: string[] }` | Workflow pausado, perguntas emitidas |
-| `writing` | `{ step: "writing", status: "in_progress" }` | Após receber respostas, retomando |
-| `writing` | `{ step: "writing", status: "completed", result: PostDraftResult }` | Post gerado |
-| `writing` | `{ step: "writing", status: "error", message: "Sessão expirada..." }` | Timeout de 10 min |
+| `workflowEvent` | `{ step: "writing", status: "awaiting_input", questions: string[] }` | Workflow pausado, perguntas emitidas |
+| `workflowEvent` | `{ step: "writing", status: "in_progress" }` | Após receber respostas, retomando |
+| `workflowEvent` | `{ step: "writing", status: "completed", result: PostDraftResult }` | Post gerado |
+| `workflowEvent` | `{ step: "writing", status: "error", message: "Sessão expirada..." }` | Timeout de 10 min |
 
 ---
 
@@ -183,7 +183,7 @@ Response: 200 OK (sem body)
 | R6 | Sessões armazenadas em **`ConcurrentDictionary` in-memory** | MVP sem banco; sem necessidade de persistência entre restarts |
 | R7 | Endpoint `/respond` retorna **404** se `sessionId` não existe | Sessão expirada ou ID inválido |
 | R8 | `ConsultedQuestionsComponent` é **oculto** após "Continuar" | UX; evitar re-submissão acidental |
-| R9 | Modo é determinado no **`WorkflowFactory`** ao montar o grafo | `LinkedInWriterExecutor` recebe o modo como parâmetro |
+| R9 | Modo é determinado no **`WorkflowStartEndpoint`** e passado diretamente ao executor | `LinkedInWriterExecutor` recebe o modo como parâmetro |
 | R10 | Perguntas dinâmicas são geradas com **chamada LLM adicional** antes da pausa | Personaliza a experiência por conteúdo do vídeo |
 
 ---

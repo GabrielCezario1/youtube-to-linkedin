@@ -120,9 +120,9 @@ public record PostDraftResult(
 
 | Evento | Payload | Quando |
 |---|---|---|
-| `writing` | `{ step: "writing", status: "in_progress" }` | Antes de chamar o LLM |
-| `writing` | `{ step: "writing", status: "completed", result: PostDraftResult }` | Post gerado |
-| `writing` | `{ step: "writing", status: "error", message: "..." }` | Falha no LLM |
+| `workflowEvent` | `{ step: "writing", status: "in_progress" }` | Antes de chamar o LLM |
+| `workflowEvent` | `{ step: "writing", status: "completed", result: PostDraftResult }` | Post gerado |
+| `workflowEvent` | `{ step: "writing", status: "error", message: "..." }` | Falha no LLM |
 
 ---
 
@@ -187,7 +187,7 @@ public record PostDraftResult(
   - Monta prompt e chama Azure OpenAI
   - Parseia JSON de resposta → `PostDraftResult`
   - Emite eventos SignalR
-- [ ] Integrar ao `WorkflowFactory` (após `SummaryExecutor`)
+- [ ] Encadear `LinkedInWriterExecutor` após `SummaryExecutor` no `WorkflowStartEndpoint` (sem WorkflowFactory)
 
 ### Frontend
 

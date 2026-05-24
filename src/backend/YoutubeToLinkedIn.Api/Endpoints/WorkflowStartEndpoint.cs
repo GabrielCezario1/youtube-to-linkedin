@@ -1,17 +1,27 @@
-using Microsoft.AspNetCore.SignalR;
+using YoutubeToLinkedIn.Api.Executors;
 using YoutubeToLinkedIn.Api.Hubs;
 
 namespace YoutubeToLinkedIn.Api.Endpoints;
 
 public static class WorkflowStartEndpoint
 {
-    public static async Task<IResult> Handle(
+    public static IResult Handle(
         StartWorkflowRequest request,
-        IHubContext<WorkflowHub> hubContext)
+        TranscriptExecutor transcriptExecutor)
     {
         var sessionId = Guid.NewGuid().ToString();
 
-        await hubContext.Clients.All.SendAsync("SendProgress", sessionId, "Workflow started (mock)");
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await transcriptExecutor.ExecuteAsync(request.Url, sessionId);
+            }
+            catch
+            {
+                // Error already signaled to client via SignalR
+            }
+        });
 
         return Results.Ok(new { sessionId });
     }

@@ -90,6 +90,7 @@ Garantir que todos os cenários de erro descritos no PRD principal estão cobert
 │  [ ] Botão "Gerar Post" desabilitado durante processamento          │
 │  [ ] Retry preserva URL, tipo de post e modo selecionados           │
 │  [ ] Retry por "sem transcrição" limpa apenas o campo URL           │
+│  [ ] Retry chama novo POST — frontend sobrescreve o sessionId ativo  │
 │                                                                     │
 │  CANCELAMENTO                                                       │
 │  [ ] Botão "Cancelar" visível durante qualquer etapa                │

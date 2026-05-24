@@ -1,17 +1,24 @@
 <h1>YouTube to LinkedIn</h1>
 
-<form (ngSubmit)="onSubmit()">
-  <div>
-    <label for="url">YouTube URL</label>
-    <input id="url" name="url" [(ngModel)]="url" required />
-  </div>
-  <div>
-    <label for="postType">Post Type</label>
-    <input id="postType" name="postType" [(ngModel)]="postType" required />
-  </div>
-  <div>
-    <label for="mode">Mode</label>
-    <input id="mode" name="mode" [(ngModel)]="mode" required />
-  </div>
-  <button type="submit">Start</button>
-</form>
+@if (view === 'form') {
+  <form (ngSubmit)="onSubmit()">
+    <div>
+      <label for="url">YouTube URL</label>
+      <input id="url" name="url" [(ngModel)]="url" required />
+    </div>
+    <div>
+      <label for="postType">Post Type</label>
+      <input id="postType" name="postType" [(ngModel)]="postType" required />
+    </div>
+    <div>
+      <label for="mode">Mode</label>
+      <input id="mode" name="mode" [(ngModel)]="mode" required />
+    </div>
+    <button type="submit">Start</button>
+  </form>
+} @else {
+  <app-workflow-progress
+    [sessionId]="currentSessionId"
+    (retry)="onRetry()"
+  />
+}

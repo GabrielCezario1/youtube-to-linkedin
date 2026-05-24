@@ -19,7 +19,7 @@ export class WorkflowService {
   start(url: string, postType: string, mode: string): Observable<StartWorkflowResponse> {
     const body: StartWorkflowRequest = { url, postType, mode };
     return this.http.post<StartWorkflowResponse>(
-      'https://localhost:5001/api/workflow/start',
+      'https://localhost:5224/api/workflow/start',
       body
     );
   }

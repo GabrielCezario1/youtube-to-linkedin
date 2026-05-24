@@ -23,13 +23,13 @@ Dado uma URL do YouTube, extrair e retornar a transcrição em texto puro, repor
      │                          │  extrai videoId da URL │
      │                          │───────────────────────▶│
      │◀────────────────────────-│                        │
-     │  SignalR: transcript      │                        │
+     │  SignalR: workflowEvent   │                        │
      │  { status: in_progress } │  YoutubeExplode        │
      │                          │───────────────────────▶│
      │                          │◀───────────────────────│
      │                          │  transcrição em texto   │
      │◀─────────────────────────│                        │
-     │  SignalR: transcript      │                        │
+     │  SignalR: workflowEvent   │                        │
      │  { status: completed }   │                        │
 ```
 
@@ -77,28 +77,28 @@ Dado uma URL do YouTube, extrair e retornar a transcrição em texto puro, repor
 
 ## Eventos SignalR desta Fase
 
-| Evento | Payload | Quando |
-|---|---|---|
-| `transcript` | `{ step: "transcript", status: "in_progress" }` | Ao iniciar extração |
-| `transcript` | `{ step: "transcript", status: "completed" }` | Transcrição extraída |
-| `transcript` | `{ step: "transcript", status: "error", message: "..." }` | Qualquer falha |
+| Evento       | Payload                                                   | Quando               |
+| ------------ | --------------------------------------------------------- | -------------------- |
+| `workflowEvent` | `{ step: "transcript", status: "in_progress" }`           | Ao iniciar extração  |
+| `workflowEvent` | `{ step: "transcript", status: "completed" }`             | Transcrição extraída |
+| `workflowEvent` | `{ step: "transcript", status: "error", message: "..." }` | Qualquer falha       |
 
 ---
 
 ## Regras e Decisões
 
-| # | Regra / Decisão | Justificativa |
-|---|---|---|
-| R1 | Usar **`YoutubeExplode`** (NuGet, 6.6.0) | Gratuito, sem OAuth, sem conta Google, 2.4M downloads, licença MIT |
-| R2 | Extração de `videoId` via **Regex** cobrindo os 3 formatos | Cobre todos os formatos comuns do YouTube |
-| R3 | URL inválida (sem videoId extraível) → **erro antes de chamar a API** | Falha rápida; evita chamada desnecessária |
-| R4 | Vídeo privado/removido → mensagem: `"Não foi possível acessar este vídeo. Verifique se ele é público e tente novamente."` | Mensagem do PRD principal, sem expor detalhes internos |
-| R5 | Vídeo sem transcrição → mensagem: `"Este vídeo não possui transcrição disponível. Tente com outro vídeo."` | Mensagem do PRD principal |
-| R6 | Falha genérica da API → mensagem: `"Ocorreu um erro ao extrair a transcrição. Tente novamente."` | Não expõe stack trace ao usuário |
-| R7 | A transcrição **não é persistida** — trafega apenas em memória dentro da sessão | MVP sem banco de dados |
-| R8 | `TranscriptExecutor` não conhece o modo (Auto/Consultado) | Responsabilidade única; o modo é tratado no `LinkedInWriterExecutor` |
-| R9 | SignalR emite evento `in_progress` **antes** de chamar a API externa | UX: usuário vê feedback imediato |
-| R10 | Transcrições muito longas **não recebem tratamento especial** nesta fase | Fora do escopo do MVP; contexto longo do modelo cobre a maioria dos casos |
+| #   | Regra / Decisão                                                                                                           | Justificativa                                                             |
+| --- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| R1  | Usar **`YoutubeExplode`** (NuGet, 6.6.0)                                                                                  | Gratuito, sem OAuth, sem conta Google, 2.4M downloads, licença MIT        |
+| R2  | Extração de `videoId` via **Regex** cobrindo os 3 formatos                                                                | Cobre todos os formatos comuns do YouTube                                 |
+| R3  | URL inválida (sem videoId extraível) → **erro antes de chamar a API**                                                     | Falha rápida; evita chamada desnecessária                                 |
+| R4  | Vídeo privado/removido → mensagem: `"Não foi possível acessar este vídeo. Verifique se ele é público e tente novamente."` | Mensagem do PRD principal, sem expor detalhes internos                    |
+| R5  | Vídeo sem transcrição → mensagem: `"Este vídeo não possui transcrição disponível. Tente com outro vídeo."`                | Mensagem do PRD principal                                                 |
+| R6  | Falha genérica da API → mensagem: `"Ocorreu um erro ao extrair a transcrição. Tente novamente."`                          | Não expõe stack trace ao usuário                                          |
+| R7  | A transcrição **não é persistida** — trafega apenas em memória dentro da sessão                                           | MVP sem banco de dados                                                    |
+| R8  | `TranscriptExecutor` não conhece o modo (Auto/Consultado)                                                                 | Responsabilidade única; o modo é tratado no `LinkedInWriterExecutor`      |
+| R9  | SignalR emite evento `in_progress` **antes** de chamar a API externa                                                      | UX: usuário vê feedback imediato                                          |
+| R10 | Transcrições muito longas **não recebem tratamento especial** nesta fase                                                  | Fora do escopo do MVP; contexto longo do modelo cobre a maioria dos casos |
 
 ---
 
@@ -117,7 +117,7 @@ Dado uma URL do YouTube, extrair e retornar a transcrição em texto puro, repor
 │                                                 │
 │  Exceções mapeadas:                             │
 │    VideoUnavailableException  → msg: privado    │
-│    NoTranscriptException      → msg: sem legenda│
+│    !manifest.Tracks.Any()     → msg: sem legenda│
 │    Exception                  → msg: genérica   │
 └─────────────────────────────────────────────────┘
 ```
@@ -167,7 +167,7 @@ Dado uma URL do YouTube, extrair e retornar a transcrição em texto puro, repor
 - [ ] Implementar extração de `videoId` via Regex (3 formatos)
 - [ ] Tratar exceções mapeadas e emitir mensagens corretas
 - [ ] Emitir eventos SignalR: `in_progress`, `completed`, `error`
-- [ ] Integrar `TranscriptExecutor` ao `WorkflowFactory`
+- [ ] Chamar `TranscriptExecutor` diretamente no `WorkflowStartEndpoint` (sem WorkflowFactory)
 
 ### Frontend
 
@@ -202,4 +202,3 @@ Dado uma URL do YouTube, extrair e retornar a transcrição em texto puro, repor
 - Tratamento de transcrições muito longas
 - Suporte a vídeos privados via OAuth
 - Paginação ou truncagem de transcrição
-

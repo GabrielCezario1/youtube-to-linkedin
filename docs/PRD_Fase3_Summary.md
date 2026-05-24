@@ -95,9 +95,9 @@ Dado a transcrição bruta do vídeo, chamar o LLM (Azure OpenAI) para gerar um 
 
 | Evento | Payload | Quando |
 |---|---|---|
-| `summary` | `{ step: "summary", status: "in_progress" }` | Antes de chamar o LLM |
-| `summary` | `{ step: "summary", status: "completed" }` | Resumo gerado |
-| `summary` | `{ step: "summary", status: "error", message: "..." }` | Falha no LLM |
+| `workflowEvent` | `{ step: "summary", status: "in_progress" }` | Antes de chamar o LLM |
+| `workflowEvent` | `{ step: "summary", status: "completed" }` | Resumo gerado |
+| `workflowEvent` | `{ step: "summary", status: "error", message: "..." }` | Falha no LLM |
 
 ---
 
@@ -175,7 +175,7 @@ Dado a transcrição bruta do vídeo, chamar o LLM (Azure OpenAI) para gerar um 
   - Chama Azure OpenAI
   - Retorna resposta como string
   - Trata exceções e emite eventos SignalR
-- [ ] Integrar `SummaryExecutor` ao `WorkflowFactory` (após `TranscriptExecutor`)
+- [ ] Encadear `SummaryExecutor` após `TranscriptExecutor` no `WorkflowStartEndpoint` (sem WorkflowFactory)
 
 ### Frontend
 
