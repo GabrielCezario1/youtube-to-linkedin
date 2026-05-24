@@ -21,4 +21,11 @@
     [sessionId]="currentSessionId"
     (retry)="onRetry()"
   />
+  @if (postDraft) {
+    <app-post-draft
+      [draft]="postDraft.draft"
+      [templateUsed]="postDraft.templateUsed"
+      (reset)="onReset()"
+    />
+  }
 }

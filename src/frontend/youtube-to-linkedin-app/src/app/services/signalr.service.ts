@@ -2,13 +2,19 @@ import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 import * as signalR from '@microsoft/signalr';
 
-export type StepId = 'transcript' | 'summary' | 'post';
+export type StepId = 'transcript' | 'summary' | 'writing';
 export type StepStatus = 'pending' | 'in_progress' | 'completed' | 'error';
+
+export interface PostDraftResult {
+  draft: string;
+  templateUsed: string;
+}
 
 export interface WorkflowEvent {
   step: StepId;
   status: StepStatus;
   message?: string;
+  result?: PostDraftResult;
 }
 
 export interface WorkflowEventEnvelope {

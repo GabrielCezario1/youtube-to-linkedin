@@ -8,7 +8,8 @@ public static class WorkflowStartEndpoint
     public static IResult Handle(
         StartWorkflowRequest request,
         TranscriptExecutor transcriptExecutor,
-        SummaryExecutor summaryExecutor)
+        SummaryExecutor summaryExecutor,
+        LinkedInWriterExecutor linkedInWriterExecutor)
     {
         var sessionId = Guid.NewGuid().ToString();
 
@@ -17,7 +18,8 @@ public static class WorkflowStartEndpoint
             try
             {
                 var transcript = await transcriptExecutor.ExecuteAsync(request.Url, sessionId);
-                await summaryExecutor.ExecuteAsync(transcript, sessionId);
+                var summary = await summaryExecutor.ExecuteAsync(transcript, sessionId);
+                await linkedInWriterExecutor.ExecuteAsync(summary, request.PostType, sessionId);
             }
             catch
             {

@@ -10,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<TranscriptExecutor>();
 builder.Services.AddSingleton<PromptLoader>();
 builder.Services.AddSingleton<SummaryExecutor>();
+builder.Services.AddSingleton<LinkedInWriterExecutor>();
 
 builder.Services.AddSingleton(sp =>
 {

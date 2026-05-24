@@ -1,0 +1,14 @@
+<div class="post-draft">
+  <div class="header">
+    <span class="template-badge">📝 Template: {{ templateUsed }}</span>
+  </div>
+
+  <div class="draft-content">{{ draft }}</div>
+
+  <div class="actions">
+    <button class="btn-copy" (click)="copyToClipboard()">
+      {{ copied() ? 'Copiado!' : 'Copiar' }}
+    </button>
+    <button class="btn-new" (click)="onReset()">Gerar Novo Post</button>
+  </div>
+</div>

@@ -81,7 +81,6 @@ public class SummaryExecutor
             ? new { step = "summary", status }
             : new { step = "summary", status, message };
 
-        return _hubContext.Clients.Group(sessionId)
-            .SendAsync("workflowEvent", payload);
+        return _hubContext.Clients.All.SendAsync("workflowEvent", sessionId, payload);
     }
 }

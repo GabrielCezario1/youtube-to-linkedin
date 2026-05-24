@@ -27,7 +27,7 @@ export class WorkflowProgressComponent implements OnInit, OnDestroy {
   steps: WorkflowStep[] = [
     { id: 'transcript', label: 'Extraindo transcrição', status: 'pending' },
     { id: 'summary', label: 'Gerando resumo', status: 'pending' },
-    { id: 'post', label: 'Criando post', status: 'pending' }
+    { id: 'writing', label: 'Criando post', status: 'pending' }
   ];
 
   get errorStep(): WorkflowStep | undefined {
