@@ -19,16 +19,22 @@ public sealed class WorkflowSessionManager : IHostedService, IDisposable
         _hubContext = hubContext;
     }
 
-    public void Register(string sessionId, TaskCompletionSource<string[]> tcs, string postType)
+    public void Register(string sessionId, CancellationTokenSource cts, string postType)
     {
         var session = new ActiveSession
         {
             SessionId = sessionId,
-            Tcs = tcs,
+            Cts = cts,
             CreatedAt = DateTime.UtcNow,
             PostType = postType
         };
         _sessions[sessionId] = session;
+    }
+
+    public void AttachTcs(string sessionId, TaskCompletionSource<string[]> tcs)
+    {
+        if (_sessions.TryGetValue(sessionId, out var session))
+            session.Tcs = tcs;
     }
 
     public bool Respond(string sessionId, string[] answers)
@@ -36,10 +42,19 @@ public sealed class WorkflowSessionManager : IHostedService, IDisposable
         if (!_sessions.TryGetValue(sessionId, out var session))
             return false;
 
-        if (session.Tcs.Task.IsCompleted)
+        if (session.Tcs is null || session.Tcs.Task.IsCompleted)
             return false;
 
         return session.Tcs.TrySetResult(answers);
+    }
+
+    public bool Cancel(string sessionId)
+    {
+        if (!_sessions.TryGetValue(sessionId, out var session))
+            return false;
+
+        session.Cts.Cancel();
+        return true;
     }
 
     public void Cleanup(string sessionId)
@@ -65,16 +80,30 @@ public sealed class WorkflowSessionManager : IHostedService, IDisposable
         var cutoff = DateTime.UtcNow - SessionTimeout;
         foreach (var (sessionId, session) in _sessions)
         {
-            if (session.CreatedAt < cutoff && !session.Tcs.Task.IsCompleted)
+            // Remove sessions already explicitly cancelled
+            if (session.Cts.IsCancellationRequested)
             {
+                _sessions.TryRemove(sessionId, out _);
+                continue;
+            }
+
+            if (session.CreatedAt >= cutoff) continue;
+
+            if (session.Tcs is not null && !session.Tcs.Task.IsCompleted)
+            {
+                // Consulted session waiting for user input — expire it
                 if (session.Tcs.TrySetCanceled())
                 {
                     _sessions.TryRemove(sessionId, out _);
 
-                    // Notify client of expiration
-                    var payload = new { step = "writing", status = "error", message = "Sessão expirada. Inicie novamente." };
+                    var payload = new { step = "writing", status = "error", errorCode = "session_expired", message = "Sessão expirada. Inicie novamente." };
                     _ = _hubContext.Clients.All.SendAsync("workflowEvent", sessionId, payload);
                 }
+            }
+            else if (session.Tcs is null)
+            {
+                // Auto session — remove silently
+                _sessions.TryRemove(sessionId, out _);
             }
         }
     }

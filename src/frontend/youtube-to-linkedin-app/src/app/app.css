@@ -1,0 +1,31 @@
+:host {
+  display: block;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.error-message {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #f5c6cb;
+  background-color: #f8d7da;
+  border-radius: 4px;
+  color: #721c24;
+}
+
+@media (max-width: 768px) {
+  :host {
+    max-width: 100%;
+    padding: 0 12px;
+  }
+}
+
+@media (max-width: 375px) {
+  input,
+  select,
+  button {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}

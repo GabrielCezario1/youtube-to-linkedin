@@ -27,7 +27,7 @@ public class SummaryExecutor
         _modelId = configuration["AzureOpenAI:ModelId"] ?? "gpt-4o-mini";
     }
 
-    public async Task<string> ExecuteAsync(string transcript, string sessionId)
+    public async Task<string> ExecuteAsync(string transcript, string sessionId, CancellationToken cancellationToken = default)
     {
         await SendWorkflowEvent(sessionId, "in_progress");
 
@@ -49,37 +49,40 @@ public class SummaryExecutor
                 MaxOutputTokenCount = 1200
             };
 
-            var response = await chatClient.CompleteChatAsync(messages, options);
+            var response = await chatClient.CompleteChatAsync(messages, options, cancellationToken);
             var content = response.Value.Content[0].Text;
 
             await SendWorkflowEvent(sessionId, "completed");
             return content;
         }
+        catch (OperationCanceledException)
+        {
+            await SendWorkflowEvent(sessionId, "error", "Workflow cancelado.", "cancelled");
+            throw;
+        }
         catch (RequestFailedException)
         {
             await SendWorkflowEvent(sessionId, "error",
-                "Ocorreu um erro ao processar o conteúdo. Tente novamente.");
-            throw;
-        }
-        catch (TaskCanceledException)
-        {
-            await SendWorkflowEvent(sessionId, "error",
-                "Ocorreu um erro ao processar o conteúdo. Tente novamente.");
+                "Ocorreu um erro ao processar o conteúdo. Tente novamente.", "llm_error");
             throw;
         }
         catch (Exception)
         {
             await SendWorkflowEvent(sessionId, "error",
-                "Ocorreu um erro ao processar o conteúdo. Tente novamente.");
+                "Ocorreu um erro ao processar o conteúdo. Tente novamente.", "llm_error");
             throw;
         }
     }
 
-    private Task SendWorkflowEvent(string sessionId, string status, string? message = null)
+    private Task SendWorkflowEvent(string sessionId, string status, string? message = null, string? errorCode = null)
     {
-        object payload = message is null
-            ? new { step = "summary", status }
-            : new { step = "summary", status, message };
+        object payload;
+        if (errorCode is not null && message is not null)
+            payload = new { step = "summary", status, errorCode, message };
+        else if (message is not null)
+            payload = new { step = "summary", status, message };
+        else
+            payload = new { step = "summary", status };
 
         return _hubContext.Clients.All.SendAsync("workflowEvent", sessionId, payload);
     }

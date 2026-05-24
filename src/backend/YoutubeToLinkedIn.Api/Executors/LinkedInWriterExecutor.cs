@@ -31,46 +31,46 @@ public class LinkedInWriterExecutor
         _modelId = configuration["AzureOpenAI:ModelId"] ?? "gpt-4o-mini";
     }
 
-    public Task<PostDraftResult> ExecuteAsync(string summary, string postType, string sessionId, string mode = "automatico")
+    public Task<PostDraftResult> ExecuteAsync(string summary, string postType, string sessionId, string mode = "automatico", CancellationToken cancellationToken = default)
     {
         return mode == "consultado"
-            ? ExecuteConsultedAsync(summary, postType, sessionId)
-            : ExecuteAutoAsync(summary, postType, sessionId);
+            ? ExecuteConsultedAsync(summary, postType, sessionId, cancellationToken)
+            : ExecuteAutoAsync(summary, postType, sessionId, cancellationToken);
     }
 
     // ── Automatic mode (Fase 4 behaviour, unchanged) ─────────────────────────
 
-    private async Task<PostDraftResult> ExecuteAutoAsync(string summary, string postType, string sessionId)
+    private async Task<PostDraftResult> ExecuteAutoAsync(string summary, string postType, string sessionId, CancellationToken cancellationToken)
     {
         await SendWorkflowEvent(sessionId, "in_progress");
 
         try
         {
             var userMessage = $"Tipo de post: {postType}\n\nResumo:\n{summary}";
-            var result = await GeneratePostAsync(userMessage, sessionId);
+            var result = await GeneratePostAsync(userMessage, sessionId, cancellationToken);
             await SendWorkflowEvent(sessionId, "completed", result: result);
             return result;
         }
-        catch (RequestFailedException)
+        catch (OperationCanceledException)
         {
-            await SendWorkflowEvent(sessionId, "error", "Ocorreu um erro ao gerar o post. Tente novamente.");
+            await SendWorkflowEvent(sessionId, "error", "Workflow cancelado.", errorCode: "cancelled");
             throw;
         }
-        catch (TaskCanceledException)
+        catch (RequestFailedException)
         {
-            await SendWorkflowEvent(sessionId, "error", "Ocorreu um erro ao gerar o post. Tente novamente.");
+            await SendWorkflowEvent(sessionId, "error", "Ocorreu um erro ao gerar o post. Tente novamente.", errorCode: "llm_error");
             throw;
         }
         catch (Exception)
         {
-            await SendWorkflowEvent(sessionId, "error", "Ocorreu um erro ao gerar o post. Tente novamente.");
+            await SendWorkflowEvent(sessionId, "error", "Ocorreu um erro ao gerar o post. Tente novamente.", errorCode: "llm_error");
             throw;
         }
     }
 
     // ── Consulted mode (Fase 5 human-in-the-loop) ────────────────────────────
 
-    private async Task<PostDraftResult> ExecuteConsultedAsync(string summary, string postType, string sessionId)
+    private async Task<PostDraftResult> ExecuteConsultedAsync(string summary, string postType, string sessionId, CancellationToken cancellationToken)
     {
         await SendWorkflowEvent(sessionId, "in_progress");
 
@@ -78,23 +78,26 @@ public class LinkedInWriterExecutor
         {
             // Build question list: fixed + up to 3 dynamic
             var questions = new List<string>(GetFixedQuestions(postType));
-            var dynamic = await GetDynamicQuestionsAsync(summary);
+            var dynamic = await GetDynamicQuestionsAsync(summary, cancellationToken);
             questions.AddRange(dynamic.Take(3));
 
-            // Register session and emit pause event
+            // Attach TCS to existing session and emit pause event
             var tcs = new TaskCompletionSource<string[]>(TaskCreationOptions.RunContinuationsAsynchronously);
-            _sessionManager.Register(sessionId, tcs, postType);
+            _sessionManager.AttachTcs(sessionId, tcs);
             await SendWorkflowEventAwaitingInput(sessionId, questions);
 
             // Wait for user answers (or timeout/cancellation)
             string[] answers;
             try
             {
-                answers = await tcs.Task;
+                answers = await tcs.Task.WaitAsync(cancellationToken);
             }
             catch (OperationCanceledException)
             {
-                await SendWorkflowEvent(sessionId, "error", "Sessão expirada. Inicie novamente.");
+                // If the user-initiated CTS was cancelled, emit 'cancelled'.
+                // If the sweep expired the session (TCS.TrySetCanceled), it already emitted 'session_expired'.
+                if (cancellationToken.IsCancellationRequested)
+                    await SendWorkflowEvent(sessionId, "error", "Workflow cancelado.", errorCode: "cancelled");
                 throw;
             }
 
@@ -111,7 +114,7 @@ public class LinkedInWriterExecutor
                 ? $"Tipo de post: {postType}\n\nResumo:\n{summary}\n\nContexto adicional do autor:\n{string.Join("\n", filteredAnswers)}"
                 : $"Tipo de post: {postType}\n\nResumo:\n{summary}";
 
-            var result = await GeneratePostAsync(userMessage, sessionId);
+            var result = await GeneratePostAsync(userMessage, sessionId, cancellationToken);
             await SendWorkflowEvent(sessionId, "completed", result: result);
             return result;
         }
@@ -122,12 +125,12 @@ public class LinkedInWriterExecutor
         }
         catch (RequestFailedException)
         {
-            await SendWorkflowEvent(sessionId, "error", "Ocorreu um erro ao gerar o post. Tente novamente.");
+            await SendWorkflowEvent(sessionId, "error", "Ocorreu um erro ao gerar o post. Tente novamente.", errorCode: "llm_error");
             throw;
         }
         catch (Exception)
         {
-            await SendWorkflowEvent(sessionId, "error", "Ocorreu um erro ao gerar o post. Tente novamente.");
+            await SendWorkflowEvent(sessionId, "error", "Ocorreu um erro ao gerar o post. Tente novamente.", errorCode: "llm_error");
             throw;
         }
         finally
@@ -159,7 +162,7 @@ public class LinkedInWriterExecutor
         _ => []
     };
 
-    private async Task<IReadOnlyList<string>> GetDynamicQuestionsAsync(string summary)
+    private async Task<IReadOnlyList<string>> GetDynamicQuestionsAsync(string summary, CancellationToken cancellationToken)
     {
         try
         {
@@ -179,7 +182,7 @@ public class LinkedInWriterExecutor
             };
 
             var options = new ChatCompletionOptions { Temperature = 0.2f, MaxOutputTokenCount = 256 };
-            var response = await chatClient.CompleteChatAsync(messages, options);
+            var response = await chatClient.CompleteChatAsync(messages, options, cancellationToken);
             var raw = response.Value.Content[0].Text.Trim();
 
             if (raw.StartsWith("```"))
@@ -192,6 +195,10 @@ public class LinkedInWriterExecutor
 
             return JsonSerializer.Deserialize<List<string>>(raw) ?? [];
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch
         {
             // Fail silently — flow continues with fixed questions only
@@ -199,7 +206,7 @@ public class LinkedInWriterExecutor
         }
     }
 
-    private async Task<PostDraftResult> GeneratePostAsync(string userMessage, string sessionId)
+    private async Task<PostDraftResult> GeneratePostAsync(string userMessage, string sessionId, CancellationToken cancellationToken)
     {
         var systemPrompt = _promptLoader.GetPrompt("linkedin-writer-system");
         var chatClient = _openAiClient.GetChatClient(_modelId);
@@ -212,7 +219,7 @@ public class LinkedInWriterExecutor
 
         var options = new ChatCompletionOptions { Temperature = 0.7f, MaxOutputTokenCount = 1200 };
 
-        var response = await chatClient.CompleteChatAsync(messages, options);
+        var response = await chatClient.CompleteChatAsync(messages, options, cancellationToken);
         var rawContent = response.Value.Content[0].Text.Trim();
 
         if (rawContent.StartsWith("```"))
@@ -237,12 +244,15 @@ public class LinkedInWriterExecutor
         string sessionId,
         string status,
         string? message = null,
-        PostDraftResult? result = null)
+        PostDraftResult? result = null,
+        string? errorCode = null)
     {
         object payload;
 
         if (result is not null)
             payload = new { step = "writing", status, result };
+        else if (errorCode is not null && message is not null)
+            payload = new { step = "writing", status, errorCode, message };
         else if (message is not null)
             payload = new { step = "writing", status, message };
         else

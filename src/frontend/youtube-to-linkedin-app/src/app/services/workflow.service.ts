@@ -24,6 +24,12 @@ export class WorkflowService {
     );
   }
 
+  cancel(sessionId: string): Observable<void> {
+    return this.http.delete<void>(
+      `https://localhost:5224/api/workflow/${sessionId}`
+    );
+  }
+
   respond(sessionId: string, answers: string[]): Observable<void> {
     return this.http.post<void>(
       `https://localhost:5224/api/workflow/${sessionId}/respond`,
@@ -31,3 +37,4 @@ export class WorkflowService {
     );
   }
 }
+

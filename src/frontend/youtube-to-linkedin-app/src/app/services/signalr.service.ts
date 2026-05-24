@@ -16,6 +16,7 @@ export interface WorkflowEvent {
   message?: string;
   result?: PostDraftResult;
   questions?: string[];
+  errorCode?: string;
 }
 
 export interface WorkflowEventEnvelope {

@@ -43,5 +43,6 @@ app.UseCors();
 app.MapHub<WorkflowHub>("/hubs/workflow");
 app.MapPost("/api/workflow/start", WorkflowStartEndpoint.Handle);
 app.MapPost("/api/workflow/{sessionId}/respond", WorkflowRespondEndpoint.Handle);
+app.MapDelete("/api/workflow/{sessionId}", WorkflowCancelEndpoint.Handle);
 
 app.Run();

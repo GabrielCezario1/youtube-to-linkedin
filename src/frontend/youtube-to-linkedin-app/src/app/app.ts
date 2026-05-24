@@ -25,6 +25,7 @@ export class App implements OnInit, OnDestroy {
   currentSessionId = '';
   postDraft: PostDraftResult | null = null;
   consultedQuestions = signal<string[] | null>(null);
+  lastError = signal<{ errorCode: string; message: string } | null>(null);
 
   private savedForm = { url: '', postType: '', mode: '' };
   private sub?: Subscription;
@@ -33,6 +34,20 @@ export class App implements OnInit, OnDestroy {
     await this.signalRService.connect();
     this.sub = this.signalRService.workflowEvent$.subscribe(({ sessionId, event }) => {
       if (sessionId !== this.currentSessionId) return;
+      if (event.status === 'error') {
+        const errorCode = event.errorCode ?? 'llm_error';
+        if (errorCode === 'session_expired') {
+          this.url = this.savedForm.url;
+          this.postType = this.savedForm.postType;
+          this.mode = this.savedForm.mode;
+          this.consultedQuestions.set(null);
+          this.postDraft = null;
+          this.view = 'form';
+        } else {
+          this.lastError.set({ errorCode, message: event.message ?? '' });
+        }
+        return;
+      }
       if (event.step === 'writing' && event.status === 'completed' && event.result) {
         this.postDraft = event.result;
       }
@@ -52,6 +67,7 @@ export class App implements OnInit, OnDestroy {
   onSubmit(): void {
     this.savedForm = { url: this.url, postType: this.postType, mode: this.mode };
     this.consultedQuestions.set(null);
+    this.lastError.set(null);
 
     this.workflowService.start(this.url, this.postType, this.mode).subscribe({
       next: (res) => {
@@ -63,17 +79,34 @@ export class App implements OnInit, OnDestroy {
     });
   }
 
-  onRetry(): void {
+  onCancel(): void {
+    this.workflowService.cancel(this.currentSessionId).subscribe({
+      error: () => {} // Ignore errors (e.g. 404 if session already completed)
+    });
     this.url = this.savedForm.url;
     this.postType = this.savedForm.postType;
     this.mode = this.savedForm.mode;
     this.postDraft = null;
+    this.consultedQuestions.set(null);
+    this.lastError.set(null);
+    this.view = 'form';
+  }
+
+  onRetry(): void {
+    const error = this.lastError();
+    this.url = error?.errorCode === 'no_transcript' ? '' : this.savedForm.url;
+    this.postType = this.savedForm.postType;
+    this.mode = this.savedForm.mode;
+    this.lastError.set(null);
+    this.postDraft = null;
+    this.consultedQuestions.set(null);
     this.view = 'form';
   }
 
   onReset(): void {
     this.postDraft = null;
     this.consultedQuestions.set(null);
+    this.lastError.set(null);
     this.currentSessionId = '';
     this.view = 'form';
   }
@@ -82,3 +115,4 @@ export class App implements OnInit, OnDestroy {
     this.consultedQuestions.set(null);
   }
 }
+
