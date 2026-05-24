@@ -1,0 +1,6 @@
+@YoutubeToLinkedIn.Api_HostAddress = http://localhost:5224
+
+GET {{YoutubeToLinkedIn.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

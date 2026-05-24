@@ -342,7 +342,7 @@ Esta seção registra as decisões de arquitetura e tecnologia definidas durante
 |---|---|---|
 | **Framework de agentes** | Microsoft Agent Framework (Workflow graph) | Processo com passos bem definidos e múltiplos agentes coordenados — Workflow é o padrão indicado pelo próprio framework |
 | **Orquestração** | Workflow com 3 nós: TranscriptNode → SummaryNode → LinkedInWriterNode | Ordem de execução explícita, fácil de depurar, suporte nativo a human-in-the-loop via checkpointing |
-| **Extração de transcrição** | `YoutubeTranscriptApi` (NuGet) | Gratuito, sem necessidade de OAuth ou conta Google, fácil integração em .NET |
+| **Extração de transcrição** | `YoutubeExplode` (NuGet, 6.6.0) | Gratuito, sem necessidade de OAuth ou conta Google, 2.4M downloads, licença MIT |
 | **LLM** | Azure OpenAI / OpenAI (GPT-4o ou GPT-4o-mini) | Suporte nativo no Microsoft Agent Framework; flexibilidade para trocar de provedor |
 | **Comunicação frontend-backend** | SignalR | Necessário para streaming de progresso em tempo real e human-in-the-loop (pausa e retomada do workflow) |
 | **Frontend** | Angular (SPA, 1 página) | Preferência do usuário; simplicidade máxima para MVP |

@@ -30,7 +30,7 @@
 │               Microsoft Agent Framework                      │
 │                                                              │
 │   WorkflowFactory (WorkflowBuilder)                          │
-│     ├── TranscriptExecutor   (YoutubeTranscriptApi)          │
+│     ├── TranscriptExecutor   (YoutubeExplode 6.6.0)          │
 │     ├── SummaryExecutor      (LLM: pontos-chave)             │
 │     └── LinkedInWriterExecutor                               │
 │           ├── Auto mode:      gera diretamente               │
@@ -39,7 +39,7 @@
 ├──────────────────────────────────────────────────────────────┤
 │              Infraestrutura / Integrações                    │
 │                                                              │
-│   YoutubeTranscriptApi  (NuGet)                              │
+│   YoutubeExplode 6.6.0  (NuGet)                              │
 │   Azure OpenAI / OpenAI (LLM provider)                       │
 │   In-memory state       (workflow sessions)                  │
 └──────────────────────────────────────────────────────────────┘
@@ -116,7 +116,7 @@ youtube-to-linkedin/
 - [ ] Criar solution `.sln` e projeto `YoutubeToLinkedIn.Api`
 - [ ] Instalar pacotes NuGet:
   - `Microsoft.Agents.AI` (Agent Framework)
-  - `YoutubeTranscriptApi`
+  - `YoutubeExplode` (6.6.0)
   - `Microsoft.AspNetCore.SignalR`
   - `Azure.AI.OpenAI` ou `OpenAI`
 - [ ] Configurar `Program.cs`: CORS, SignalR, Minimal API
@@ -141,7 +141,7 @@ youtube-to-linkedin/
 **Objetivo:** Dado uma URL do YouTube, extrair e retornar a transcrição em texto.
 
 **Backend:**
-- [ ] Criar `TranscriptNode.cs` usando `YoutubeTranscriptApi`
+- [ ] Criar `TranscriptNode.cs` usando `YoutubeExplode`
 - [ ] Extrair `videoId` da URL (suportar formatos: `?v=`, `youtu.be/`, `shorts/`)
 - [ ] Tratar erros: vídeo privado, sem transcrição, URL inválida
 - [ ] Emitir evento SignalR `{ step: "transcript", status: "in_progress" }` ao iniciar
@@ -304,7 +304,7 @@ Fase 1 (Scaffold)
 |---|---|
 | `Microsoft.Agents.AI` (prerelease) | Agent Framework — agentes e modelo |
 | `Microsoft.Agents.AI.Workflows` (prerelease) | Agent Framework — workflow graph e executors |
-| `YoutubeTranscriptApi` | Extração de transcrição do YouTube |
+| `YoutubeExplode` (6.6.0) | Extração de transcrição e legendas do YouTube |
 | `Azure.AI.OpenAI` | Cliente LLM (Azure OpenAI) |
 | `Microsoft.AspNetCore.SignalR` | Streaming em tempo real + human-in-the-loop |
 
