@@ -1,5 +1,7 @@
 # Tech Content Agent
 
+> 🇧🇷 [Leia em Português](#tech-content-agent-pt-br)
+
 Converts a YouTube video into a LinkedIn post using Azure OpenAI. Paste a video URL, choose between **Auto mode** (fully automated) or **Consulted mode** (AI asks clarifying questions before writing), and get a ready-to-publish draft in seconds.
 
 ## Architecture Overview
@@ -130,3 +132,140 @@ Available at: **http://localhost:4200**
 
 - [Product Requirements](docs/PRD_TechContentAgent.md)
 - [Implementation Plan](docs/IMPLEMENTATION_PLAN.md)
+
+---
+
+# Tech Content Agent (PT-BR)
+
+> 🇺🇸 [Read in English](#tech-content-agent)
+
+Converte um vídeo do YouTube em um post para o LinkedIn usando Azure OpenAI. Cole a URL do vídeo, escolha entre o **modo Automático** (totalmente automatizado) ou o **modo Consultivo** (a IA faz perguntas antes de escrever) e obtenha um rascunho pronto para publicar em segundos.
+
+## Visão Geral da Arquitetura
+
+```
+Frontend (Angular 21)  ──HTTP──▶  Backend (.NET 10 / ASP.NET Core)  ──▶  Azure OpenAI
+         │                                    │
+         └──────── SignalR ◀──────────────────┘
+```
+
+- **Backend**: Minimal API + hub SignalR. Orquestra a extração de transcrição (YoutubeExplode), sumarização e geração do post via Azure OpenAI.
+- **Frontend**: SPA Angular que recebe o progresso do workflow em tempo real via SignalR.
+
+## Pré-requisitos
+
+| Ferramenta | Versão | Link |
+|------------|--------|------|
+| .NET SDK | 10.0+ | https://dotnet.microsoft.com/download |
+| Node.js | 20+ | https://nodejs.org/ |
+| npm | 11+ | (incluído com o Node.js) |
+| Angular CLI | 21+ | `npm install -g @angular/cli` |
+| Azure OpenAI | — | Deployment ativo (ex: `gpt-4o-mini`) |
+
+## Configuração
+
+### 1. Clone o repositório
+
+```bash
+git clone <repo-url>
+cd youtube-to-linkedin
+```
+
+### 2. Configure o backend — credenciais do Azure OpenAI
+
+A chave de API é armazenada via [.NET User Secrets](https://learn.microsoft.com/pt-br/aspnet/core/security/app-secrets) e **nunca é commitada no repositório**.
+
+```bash
+cd src/backend/YoutubeToLinkedIn.Api
+dotnet user-secrets set "AzureOpenAI:ApiKey" "<sua-chave-de-api>"
+```
+
+Em seguida, abra `src/backend/YoutubeToLinkedIn.Api/appsettings.json` e preencha o endpoint do Azure OpenAI:
+
+```json
+"AzureOpenAI": {
+  "Endpoint": "https://<seu-recurso>.openai.azure.com/",
+  "ModelId": "gpt-4o-mini"
+}
+```
+
+> A `ApiKey` **não deve** ser colocada no `appsettings.json`. Use o User Secrets conforme mostrado acima.
+
+### 3. Configure o ambiente do frontend
+
+```bash
+cd src/frontend/youtube-to-linkedin-app
+cp .env.example .env
+```
+
+O `.env` padrão aponta para o endereço HTTPS do backend. Se usar o perfil HTTP, ajuste conforme necessário:
+
+```env
+# Perfil HTTPS (padrão)
+BACKEND_URL=https://localhost:7064
+
+# Perfil HTTP (alternativo)
+# BACKEND_URL=http://localhost:5224
+```
+
+## Rodando Localmente
+
+Abra **dois terminais**.
+
+### Terminal 1 — Backend
+
+```bash
+cd src/backend/YoutubeToLinkedIn.Api
+dotnet run
+```
+
+| Perfil | URL |
+|--------|-----|
+| HTTPS (padrão) | https://localhost:7064 |
+| HTTP | http://localhost:5224 |
+
+Para forçar um perfil específico:
+
+```bash
+dotnet run --launch-profile https   # HTTPS
+dotnet run --launch-profile http    # somente HTTP
+```
+
+### Terminal 2 — Frontend
+
+```bash
+cd src/frontend/youtube-to-linkedin-app
+npm install
+npm start
+```
+
+Disponível em: **http://localhost:4200**
+
+## Resumo do Ambiente
+
+| Serviço | URL |
+|---------|-----|
+| Frontend | http://localhost:4200 |
+| Backend (HTTPS) | https://localhost:7064 |
+| Backend (HTTP) | http://localhost:5224 |
+| Hub SignalR | /hubs/workflow |
+
+## Endpoints Principais
+
+| Método | Caminho | Descrição |
+|--------|---------|-----------|
+| `POST` | `/api/workflow/start` | Inicia um novo workflow (Automático ou Consultivo) |
+| `POST` | `/api/workflow/{sessionId}/respond` | Responde uma pergunta do modo Consultivo |
+| `DELETE` | `/api/workflow/{sessionId}` | Cancela um workflow ativo |
+| WS | `/hubs/workflow` | Hub SignalR para eventos de progresso em tempo real |
+
+## Modos de Workflow
+
+**Modo Automático** — forneça a URL do YouTube e o agente extrai automaticamente a transcrição, sumariza e gera o post para o LinkedIn.
+
+**Modo Consultivo** — mesmo fluxo, mas o agente faz até 3 perguntas de esclarecimento antes de escrever o post. Sessões inativas expiram após 10 minutos (configurável via `Workflow:ConsultedSessionTimeoutMinutes`).
+
+## Documentação
+
+- [Requisitos do Produto](docs/PRD_TechContentAgent.md)
+- [Plano de Implementação](docs/IMPLEMENTATION_PLAN.md)
