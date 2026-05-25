@@ -1,0 +1,22 @@
+# Secrets and local configuration
+appsettings.Development.json
+*.user
+.env
+
+# Build artifacts — Backend
+bin/
+obj/
+
+# Build artifacts — Frontend
+node_modules/
+dist/
+.angular/
+
+# IDE
+.vs/
+.idea/
+*.suo
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,14 +1,44 @@
-<div class="post-draft">
-  <div class="header">
-    <span class="template-badge">📝 Template: {{ templateUsed }}</span>
+<div class="post-draft card animate-slide-up">
+
+  <!-- Card Header -->
+  <div class="draft-header">
+    <div class="draft-meta">
+      <div class="avatar" aria-hidden="true">TCA</div>
+      <div>
+        <p class="avatar-name">Tech Content Agent</p>
+        <p class="avatar-tagline">LinkedIn Post · Rascunho</p>
+      </div>
+    </div>
+    <span class="badge">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+      </svg>
+      {{ templateLabel }}
+    </span>
   </div>
 
+  <hr class="divider">
+
+  <!-- Post Content -->
   <div class="draft-content">{{ draft }}</div>
 
-  <div class="actions">
-    <button class="btn-copy" (click)="copyToClipboard()">
-      {{ copied() ? 'Copiado!' : 'Copiar' }}
+  <hr class="divider">
+
+  <!-- Actions -->
+  <div class="draft-actions">
+    <button class="btn btn-primary" (click)="copyToClipboard()">
+      @if (copied()) {
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+        Copiado!
+      } @else {
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        Copiar Post
+      }
     </button>
-    <button class="btn-new" (click)="onReset()">Gerar Novo Post</button>
+    <button class="btn btn-secondary" (click)="onReset()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+      Gerar Novo
+    </button>
   </div>
+
 </div>

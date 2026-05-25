@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 import * as signalR from '@microsoft/signalr';
+import { environment } from '../../environments/environment';
 
 export type StepId = 'transcript' | 'summary' | 'writing';
 export type StepStatus = 'pending' | 'in_progress' | 'completed' | 'error' | 'awaiting_input';
@@ -27,7 +28,7 @@ export interface WorkflowEventEnvelope {
 @Injectable({ providedIn: 'root' })
 export class SignalRService {
   private hub = new signalR.HubConnectionBuilder()
-    .withUrl('https://localhost:5224/hubs/workflow')
+    .withUrl(`${environment.backendUrl}/hubs/workflow`)
     .withAutomaticReconnect()
     .build();
 

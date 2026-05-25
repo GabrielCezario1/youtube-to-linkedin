@@ -1,17 +1,56 @@
-<div class="workflow-progress">
-  <h2>Processando vídeo...</h2>
+<div class="workflow-progress card">
+  <div class="progress-header">
+    <div class="progress-title-row">
+      <h2 class="progress-title">Processando vídeo</h2>
+      @if (!errorStep && !allDone) {
+        <span class="spinner" aria-label="Carregando"></span>
+      }
+    </div>
+    <p class="progress-subtitle">Isso pode levar alguns segundos...</p>
+  </div>
 
   <ul class="steps">
     @for (step of steps; track step.id) {
-      <li class="step" [class]="step.status">
-        <span class="icon">{{ stepIcon(step.status) }}</span>
-        <span class="label">
-          @if (step.status === 'awaiting_input') {
-            Aguardando sua resposta...
-          } @else {
-            {{ step.label }}
+      <li class="step" [class]="'step-' + step.status">
+        <span class="step-indicator">
+          @switch (step.status) {
+            @case ('completed') {
+              <svg class="step-icon icon-done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            }
+            @case ('in_progress') {
+              <span class="step-dot-spin"></span>
+            }
+            @case ('awaiting_input') {
+              <svg class="step-icon icon-pause" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="4" width="4" height="16" rx="1"/>
+                <rect x="14" y="4" width="4" height="16" rx="1"/>
+              </svg>
+            }
+            @case ('error') {
+              <svg class="step-icon icon-error" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            }
+            @default {
+              <span class="step-dot-idle"></span>
+            }
           }
         </span>
+        <div class="step-content">
+          <span class="step-label">
+            @if (step.status === 'awaiting_input') {
+              Aguardando sua resposta...
+            } @else {
+              {{ step.label }}
+            }
+          </span>
+          @if (step.status === 'in_progress') {
+            <span class="step-sublabel">Em andamento</span>
+          }
+        </div>
       </li>
     }
   </ul>

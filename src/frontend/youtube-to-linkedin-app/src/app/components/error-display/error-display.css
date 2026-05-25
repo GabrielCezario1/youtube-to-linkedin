@@ -1,27 +1,30 @@
 .error-display {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
   margin-top: 1rem;
-  padding: 1rem;
-  background: #fff0f0;
-  border: 1px solid #f5c6c6;
-  border-radius: 6px;
+  padding: 1rem 1.125rem;
+  background: var(--color-error-bg);
+  border: 1px solid rgba(232,65,65,.25);
+  border-radius: var(--radius-md);
+}
+
+.error-icon {
+  color: var(--color-error);
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.error-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  flex: 1;
 }
 
 .error-message {
-  margin: 0 0 0.75rem;
-  color: #a00;
-  font-size: 0.95rem;
-}
-
-.retry-btn {
-  padding: 0.45rem 1.1rem;
-  background: #e53935;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.retry-btn:hover {
-  background: #c62828;
+  font-size: var(--font-size-sm);
+  color: #7B1010;
+  line-height: 1.5;
+  margin: 0;
 }

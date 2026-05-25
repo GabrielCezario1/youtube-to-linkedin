@@ -34,6 +34,10 @@ export class WorkflowProgressComponent implements OnInit, OnDestroy {
     return this.steps.find(s => s.status === 'error');
   }
 
+  get allDone(): boolean {
+    return this.steps.every(s => s.status === 'completed' || s.status === 'error');
+  }
+
   constructor(private signalR: SignalRService) {}
 
   ngOnInit(): void {

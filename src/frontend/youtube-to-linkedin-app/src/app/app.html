@@ -1,51 +1,141 @@
-<h1>YouTube to LinkedIn</h1>
+<!-- ══════════ Header ══════════ -->
+<header class="app-header">
+  <div class="header-inner">
+    <div class="brand">
+      <span class="brand-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.77a4.85 4.85 0 01-1.01-.08z" fill="currentColor"/>
+        </svg>
+      </span>
+      <div>
+        <span class="brand-title">Tech Content Agent</span>
+        <span class="brand-subtitle">YouTube → LinkedIn</span>
+      </div>
+    </div>
+  </div>
+</header>
 
-@if (view === 'form') {
-  <fieldset>
-    <form (ngSubmit)="onSubmit()">
-      <div>
-        <label for="url">YouTube URL</label>
-        <input id="url" name="url" [(ngModel)]="url" required />
+<!-- ══════════ Main ══════════ -->
+<main class="app-main">
+
+  @if (view === 'form') {
+    <!-- ── Input Form ── -->
+    <div class="card animate-slide-up">
+      <div class="form-header">
+        <h2 class="form-title">Gerar Post para o LinkedIn</h2>
+        <p class="form-description">Cole a URL de um vídeo do YouTube e escolha como deseja que o post seja criado.</p>
       </div>
-      <div>
-        <label for="postType">Post Type</label>
-        <input id="postType" name="postType" [(ngModel)]="postType" required />
-      </div>
-      <div>
-        <label for="mode">Mode</label>
-        <input id="mode" name="mode" [(ngModel)]="mode" required />
-      </div>
-      <button type="submit">Start</button>
-    </form>
-  </fieldset>
-} @else {
-  <app-workflow-progress
-    [sessionId]="currentSessionId"
-    (retry)="onRetry()"
-  />
-  <button type="button" (click)="onCancel()">Cancelar</button>
-  @if (lastError()) {
-    <div class="error-message">
-      <p>{{ lastError()!.message }}</p>
-      @if (lastError()!.errorCode === 'no_transcript') {
-        <button type="button" (click)="onRetry()">Tentar com outro vídeo</button>
-      } @else {
-        <button type="button" (click)="onRetry()">Tentar Novamente</button>
+
+      <hr class="divider">
+
+      <form (ngSubmit)="onSubmit()" class="workflow-form">
+        <div class="form-group">
+          <label for="url">
+            <span class="label-icon">▶</span> URL do Vídeo
+          </label>
+          <input
+            id="url"
+            name="url"
+            type="url"
+            [(ngModel)]="url"
+            required
+            placeholder="https://www.youtube.com/watch?v=..."
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="postType">Formato do Post</label>
+            <select id="postType" name="postType" [(ngModel)]="postType" required>
+              <option value="" disabled selected>Escolha um formato</option>
+              <option value="storytelling">📖 Storytelling</option>
+              <option value="lista-pratica">📋 Lista Prática</option>
+              <option value="opiniao-provocativa">💡 Opinião Provocativa</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="mode">Modo de Criação</label>
+            <select id="mode" name="mode" [(ngModel)]="mode" required>
+              <option value="" disabled selected>Escolha um modo</option>
+              <option value="automatico">⚡ Automático</option>
+              <option value="consultado">💬 Consultado</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-footer">
+          <button type="submit" class="btn btn-primary btn-submit">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Gerar Post
+          </button>
+          <p class="mode-hint">
+            @if (mode === 'consultado') {
+              💬 O agente fará perguntas para personalizar seu post.
+            } @else if (mode === 'automatico') {
+              ⚡ O agente criará o post sem intervenção.
+            }
+          </p>
+        </div>
+      </form>
+    </div>
+
+  } @else {
+    <!-- ── Workflow Progress View ── -->
+    <div class="progress-wrapper animate-slide-up">
+      <app-workflow-progress
+        [sessionId]="currentSessionId"
+        (retry)="onRetry()"
+      />
+
+      @if (!lastError() && !postDraft) {
+        <div class="cancel-area">
+          <button type="button" class="btn btn-ghost" (click)="onCancel()">
+            Cancelar
+          </button>
+        </div>
+      }
+
+      @if (lastError()) {
+        <div class="error-banner animate-slide-up">
+          <div class="error-banner-icon">⚠️</div>
+          <div class="error-banner-body">
+            <p class="error-banner-message">{{ lastError()!.message }}</p>
+            <div class="error-banner-actions">
+              @if (lastError()!.errorCode === 'no_transcript') {
+                <button type="button" class="btn btn-secondary" (click)="onRetry()">Tentar com outro vídeo</button>
+              } @else {
+                <button type="button" class="btn btn-secondary" (click)="onRetry()">Tentar Novamente</button>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (consultedQuestions()) {
+        <app-consulted-questions
+          [questions]="consultedQuestions()!"
+          [sessionId]="currentSessionId"
+          (submitted)="onConsultedSubmitted()"
+        />
+      }
+
+      @if (postDraft) {
+        <app-post-draft
+          [draft]="postDraft.draft"
+          [templateUsed]="postDraft.templateUsed"
+          (reset)="onReset()"
+        />
       }
     </div>
   }
-  @if (consultedQuestions()) {
-    <app-consulted-questions
-      [questions]="consultedQuestions()!"
-      [sessionId]="currentSessionId"
-      (submitted)="onConsultedSubmitted()"
-    />
-  }
-  @if (postDraft) {
-    <app-post-draft
-      [draft]="postDraft.draft"
-      [templateUsed]="postDraft.templateUsed"
-      (reset)="onReset()"
-    />
-  }
-}
+
+</main>
+
+<!-- ══════════ Footer ══════════ -->
+<footer class="app-footer">
+  <p>Powered by Azure OpenAI · GPT-4o-mini</p>
+</footer>

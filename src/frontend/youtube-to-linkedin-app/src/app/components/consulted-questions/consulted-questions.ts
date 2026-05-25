@@ -6,7 +6,8 @@ import { WorkflowService } from '../../services/workflow.service';
   selector: 'app-consulted-questions',
   standalone: true,
   imports: [FormsModule],
-  templateUrl: './consulted-questions.html'
+  templateUrl: './consulted-questions.html',
+  styleUrl: './consulted-questions.css'
 })
 export class ConsultedQuestionsComponent {
   @Input() questions: string[] = [];

@@ -1,4 +1,16 @@
-<div class="error-display">
-  <p class="error-message">{{ message }}</p>
-  <button class="retry-btn" (click)="onRetry()">{{ buttonLabel }}</button>
+<div class="error-display" role="alert">
+  <div class="error-icon" aria-hidden="true">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+  </div>
+  <div class="error-body">
+    <p class="error-message">{{ message }}</p>
+    <button class="btn btn-danger" (click)="onRetry()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+      {{ buttonLabel }}
+    </button>
+  </div>
 </div>

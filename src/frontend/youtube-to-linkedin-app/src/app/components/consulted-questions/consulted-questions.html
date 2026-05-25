@@ -1,11 +1,25 @@
-<div class="consulted-questions">
-  <h3>Personalize seu post</h3>
-  <p class="hint">Todas as perguntas são opcionais. Responda apenas o que quiser.</p>
+<div class="consulted-questions card animate-slide-up">
+  <div class="cq-header">
+    <div class="cq-icon" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+      </svg>
+    </div>
+    <div>
+      <h3 class="cq-title">Personalize seu post</h3>
+      <p class="cq-hint">Todas as perguntas são opcionais. Responda apenas o que quiser.</p>
+    </div>
+  </div>
 
-  <form (ngSubmit)="onSubmit()">
+  <hr class="divider">
+
+  <form (ngSubmit)="onSubmit()" class="cq-form">
     @for (question of questions; track $index) {
       <div class="question-block">
-        <label [for]="'q' + $index">{{ question }}</label>
+        <label [for]="'q' + $index" class="question-label">
+          <span class="question-number">{{ $index + 1 }}</span>
+          {{ question }}
+        </label>
         <textarea
           [id]="'q' + $index"
           [name]="'q' + $index"
@@ -17,6 +31,14 @@
       </div>
     }
 
-    <button type="submit">Continuar</button>
+    <div class="cq-footer">
+      <button type="submit" class="btn btn-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+        Enviar e Continuar
+      </button>
+    </div>
   </form>
 </div>

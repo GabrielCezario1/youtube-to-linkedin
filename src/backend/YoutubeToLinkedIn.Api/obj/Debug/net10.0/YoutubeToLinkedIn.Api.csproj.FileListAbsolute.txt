@@ -1,3 +1,4 @@
+C:\Users\gabri\source\repos\youtube-to-linkedin\src\backend\YoutubeToLinkedIn.Api\obj\Debug\net10.0\YoutubeToLinkedIn.Api.csproj.AssemblyReference.cache
 C:\Users\gabri\source\repos\youtube-to-linkedin\src\backend\YoutubeToLinkedIn.Api\bin\Debug\net10.0\appsettings.Development.json
 C:\Users\gabri\source\repos\youtube-to-linkedin\src\backend\YoutubeToLinkedIn.Api\bin\Debug\net10.0\appsettings.json
 C:\Users\gabri\source\repos\youtube-to-linkedin\src\backend\YoutubeToLinkedIn.Api\bin\Debug\net10.0\YoutubeToLinkedIn.Api.staticwebassets.endpoints.json
@@ -27,7 +28,6 @@ C:\Users\gabri\source\repos\youtube-to-linkedin\src\backend\YoutubeToLinkedIn.Ap
 C:\Users\gabri\source\repos\youtube-to-linkedin\src\backend\YoutubeToLinkedIn.Api\bin\Debug\net10.0\System.Memory.Data.dll
 C:\Users\gabri\source\repos\youtube-to-linkedin\src\backend\YoutubeToLinkedIn.Api\bin\Debug\net10.0\System.Numerics.Tensors.dll
 C:\Users\gabri\source\repos\youtube-to-linkedin\src\backend\YoutubeToLinkedIn.Api\bin\Debug\net10.0\YoutubeExplode.dll
-C:\Users\gabri\source\repos\youtube-to-linkedin\src\backend\YoutubeToLinkedIn.Api\obj\Debug\net10.0\YoutubeToLinkedIn.Api.csproj.AssemblyReference.cache
 C:\Users\gabri\source\repos\youtube-to-linkedin\src\backend\YoutubeToLinkedIn.Api\obj\Debug\net10.0\rpswa.dswa.cache.json
 C:\Users\gabri\source\repos\youtube-to-linkedin\src\backend\YoutubeToLinkedIn.Api\obj\Debug\net10.0\YoutubeToLinkedIn.Api.GeneratedMSBuildEditorConfig.editorconfig
 C:\Users\gabri\source\repos\youtube-to-linkedin\src\backend\YoutubeToLinkedIn.Api\obj\Debug\net10.0\YoutubeToLinkedIn.Api.AssemblyInfoInputs.cache

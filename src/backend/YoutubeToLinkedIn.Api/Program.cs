@@ -26,8 +26,9 @@ builder.Services.AddSingleton(sp =>
 
 builder.Services.AddCors(options =>
 {
+    var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? [];
     options.AddDefaultPolicy(policy =>
-        policy.WithOrigins("http://localhost:4200")
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials());
@@ -37,8 +38,11 @@ builder.Services.AddSignalR();
 
 var app = builder.Build();
 
-app.UseHttpsRedirection();
 app.UseCors();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.MapHub<WorkflowHub>("/hubs/workflow");
 app.MapPost("/api/workflow/start", WorkflowStartEndpoint.Handle);

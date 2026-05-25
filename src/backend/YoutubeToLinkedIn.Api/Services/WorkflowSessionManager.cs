@@ -9,14 +9,16 @@ public sealed class WorkflowSessionManager : IHostedService, IDisposable
 {
     private readonly ConcurrentDictionary<string, ActiveSession> _sessions = new();
     private readonly IHubContext<WorkflowHub> _hubContext;
+    private readonly TimeSpan _sessionTimeout;
     private Timer? _timer;
 
-    private static readonly TimeSpan SessionTimeout = TimeSpan.FromMinutes(10);
     private static readonly TimeSpan SweepInterval = TimeSpan.FromSeconds(60);
 
-    public WorkflowSessionManager(IHubContext<WorkflowHub> hubContext)
+    public WorkflowSessionManager(IHubContext<WorkflowHub> hubContext, IConfiguration configuration)
     {
         _hubContext = hubContext;
+        var minutes = Math.Max(1, configuration.GetValue<int>("Workflow:ConsultedSessionTimeoutMinutes", 10));
+        _sessionTimeout = TimeSpan.FromMinutes(minutes);
     }
 
     public void Register(string sessionId, CancellationTokenSource cts, string postType)
@@ -77,7 +79,7 @@ public sealed class WorkflowSessionManager : IHostedService, IDisposable
 
     private void ExpireStale(object? state)
     {
-        var cutoff = DateTime.UtcNow - SessionTimeout;
+        var cutoff = DateTime.UtcNow - _sessionTimeout;
         foreach (var (sessionId, session) in _sessions)
         {
             // Remove sessions already explicitly cancelled

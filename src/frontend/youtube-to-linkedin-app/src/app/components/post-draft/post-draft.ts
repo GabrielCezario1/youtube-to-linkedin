@@ -13,6 +13,15 @@ export class PostDraftComponent {
   @Input() templateUsed = '';
   @Output() reset = new EventEmitter<void>();
 
+  get templateLabel(): string {
+    const map: Record<string, string> = {
+      'storytelling': 'Storytelling',
+      'lista-pratica': 'Lista Prática',
+      'opiniao-provocativa': 'Opinião Provocativa'
+    };
+    return map[this.templateUsed] ?? this.templateUsed;
+  }
+
   copied = signal(false);
   private copyTimeout?: ReturnType<typeof setTimeout>;
 
