@@ -130,8 +130,7 @@ Available at: **http://localhost:4200**
 
 ## Documentation
 
-- [Product Requirements](docs/PRD_TechContentAgent.md)
-- [Implementation Plan](docs/IMPLEMENTATION_PLAN.md)
+- [Guia de implementação do Azure OpenAI ](docs/infraestrutura-azure-youtube-to-linkedin.md)
 
 ---
 
@@ -267,5 +266,4 @@ Disponível em: **http://localhost:4200**
 
 ## Documentação
 
-- [Requisitos do Produto](docs/PRD_TechContentAgent.md)
-- [Plano de Implementação](docs/IMPLEMENTATION_PLAN.md)
+- [Guia de implementação do Azure OpenAI ](docs/infraestrutura-azure-youtube-to-linkedin.md)
