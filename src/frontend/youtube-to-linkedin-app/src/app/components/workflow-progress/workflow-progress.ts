@@ -41,10 +41,12 @@ export class WorkflowProgressComponent implements OnInit, OnDestroy {
   constructor(private signalR: SignalRService) {}
 
   ngOnInit(): void {
+    console.log(`%c[Progress] subscribing — session=${this.sessionId.slice(0, 8)}…`, 'color:#34d399;font-weight:bold');
     this.sub = this.signalR.workflowEvent$.subscribe(({ sessionId, event }) => {
       if (sessionId !== this.sessionId) return;
       const step = this.steps.find(s => s.id === event.step);
       if (step) {
+        console.log(`%c[Progress] step update`, 'color:#34d399;font-weight:bold', `${step.id}: ${step.status} → ${event.status}`);
         step.status = event.status;
         step.errorMessage = event.message;
       }

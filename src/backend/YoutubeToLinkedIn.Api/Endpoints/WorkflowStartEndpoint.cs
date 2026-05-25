@@ -52,7 +52,6 @@ public static class WorkflowStartEndpoint
             }
             catch
             {
-                // Error already signaled to client via SignalR
                 sessionManager.Cleanup(sessionId);
             }
         });

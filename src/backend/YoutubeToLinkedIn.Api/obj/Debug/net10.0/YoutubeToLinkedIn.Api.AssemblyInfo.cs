@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("YoutubeToLinkedIn.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6eaef071c99cc514f9b3eabe6e4d499a02b0eefb")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d25bfdde6dbad24eac288853cb54236b7088e9e7")]
 [assembly: System.Reflection.AssemblyProductAttribute("YoutubeToLinkedIn.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("YoutubeToLinkedIn.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
