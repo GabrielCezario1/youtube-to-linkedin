@@ -101,7 +101,6 @@ export class App implements OnInit, OnDestroy {
       console.error('[App] SignalR connection failed:', err);
     }
     this.sub = this.signalRService.workflowEvent$.subscribe(({ sessionId, event }) => {
-      console.log(`%c[App] ◀ event  ${event.step}/${event.status}`, 'color:#a78bfa;font-weight:bold', `session=${sessionId.slice(0, 8)}…`);
       if (sessionId !== this.currentSessionId) return;
       if (event.status === 'error') {
         const errorCode = event.errorCode ?? 'llm_error';
@@ -134,14 +133,12 @@ export class App implements OnInit, OnDestroy {
   }
 
   onSubmit(): void {
-    console.log('%c[App] form submitted', 'color:#fb923c;font-weight:bold', { url: this.url, postType: this.postType, mode: this.mode });
     this.savedForm = { url: this.url, postType: this.postType, mode: this.mode };
     this.consultedQuestions.set(null);
     this.lastError.set(null);
 
     this.workflowService.start(this.url, this.postType, this.mode).subscribe({
       next: (res) => {
-        console.log('%c[App] ✅ session started', 'color:#4ade80;font-weight:bold', res.sessionId);
         this.currentSessionId = res.sessionId;
         this.postDraft.set(null);
         this.view.set('progress');

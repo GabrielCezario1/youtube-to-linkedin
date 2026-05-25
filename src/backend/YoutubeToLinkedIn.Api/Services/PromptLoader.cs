@@ -15,9 +15,10 @@ public class PromptLoader
 
         _prompts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var file in Directory.EnumerateFiles(promptsDir, "*.md"))
+        foreach (var file in Directory.EnumerateFiles(promptsDir, "*.md", SearchOption.AllDirectories))
         {
-            var key = Path.GetFileNameWithoutExtension(file);
+            var relativePath = Path.GetRelativePath(promptsDir, file);
+            var key = relativePath.Replace('\\', '/').Replace(".md", string.Empty);
             _prompts[key] = File.ReadAllText(file);
         }
     }

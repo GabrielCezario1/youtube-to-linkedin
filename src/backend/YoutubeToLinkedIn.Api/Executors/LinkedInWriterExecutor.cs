@@ -46,8 +46,8 @@ public class LinkedInWriterExecutor
 
         try
         {
-            var userMessage = $"Tipo de post: {postType}\n\nResumo:\n{summary}";
-            var result = await GeneratePostAsync(userMessage, sessionId, cancellationToken);
+            var userMessage = $"Resumo:\n{summary}";
+            var result = await GeneratePostAsync(userMessage, postType, sessionId, cancellationToken);
             await SendWorkflowEvent(sessionId, "completed", result: result);
             return result;
         }
@@ -111,10 +111,10 @@ public class LinkedInWriterExecutor
                 .ToList();
 
             var userMessage = filteredAnswers.Count > 0
-                ? $"Tipo de post: {postType}\n\nResumo:\n{summary}\n\nContexto adicional do autor:\n{string.Join("\n", filteredAnswers)}"
-                : $"Tipo de post: {postType}\n\nResumo:\n{summary}";
+                ? $"Resumo:\n{summary}\n\nContexto adicional do autor:\n{string.Join("\n", filteredAnswers)}"
+                : $"Resumo:\n{summary}";
 
-            var result = await GeneratePostAsync(userMessage, sessionId, cancellationToken);
+            var result = await GeneratePostAsync(userMessage, postType, sessionId, cancellationToken);
             await SendWorkflowEvent(sessionId, "completed", result: result);
             return result;
         }
@@ -158,6 +158,11 @@ public class LinkedInWriterExecutor
         [
             "Qual é a crença comum que você quer questionar?",
             "Você tem um dado ou exemplo concreto para reforçar?"
+        ],
+        "noticia" =>
+        [
+            "Qual é a sua opinião sobre essa novidade? (empolgado, cético, curioso...)",
+            "Você já experimentou ou vivenciou algo relacionado a isso?"
         ],
         _ => []
     };
@@ -206,9 +211,20 @@ public class LinkedInWriterExecutor
         }
     }
 
-    private async Task<PostDraftResult> GeneratePostAsync(string userMessage, string sessionId, CancellationToken cancellationToken)
+    private async Task<PostDraftResult> GeneratePostAsync(string userMessage, string postType, string sessionId, CancellationToken cancellationToken)
     {
-        var systemPrompt = _promptLoader.GetPrompt("linkedin-writer-system");
+        var templateContent = _promptLoader.GetPrompt($"templetes/template-{postType}");
+        var systemPrompt = $$"""
+            {{templateContent}}
+
+            ## Output Format
+
+            Treat the provided summary as the source material for all required context. Generate the post following the template structure above.
+            Respond exclusively in valid JSON, without markdown blocks:
+            {"draft":"full post text here","templateUsed":"Template Name"}
+
+            The `templateUsed` field must contain exactly one of: "Storytelling", "Lista Prática", "Opinião Provocativa", "Notícia".
+            """;
         var chatClient = _openAiClient.GetChatClient(_modelId);
 
         var messages = new List<ChatMessage>

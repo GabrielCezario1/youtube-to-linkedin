@@ -17,7 +17,8 @@ export class PostDraftComponent {
     const map: Record<string, string> = {
       'storytelling': 'Storytelling',
       'lista-pratica': 'Lista Prática',
-      'opiniao-provocativa': 'Opinião Provocativa'
+      'opiniao-provocativa': 'Opinião Provocativa',
+      'noticia': 'Notícia'
     };
     return map[this.templateUsed] ?? this.templateUsed;
   }

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { SignalRService, StepId, StepStatus } from '../../services/signalr.service';
@@ -38,17 +38,16 @@ export class WorkflowProgressComponent implements OnInit, OnDestroy {
     return this.steps.every(s => s.status === 'completed' || s.status === 'error');
   }
 
-  constructor(private signalR: SignalRService) {}
+  constructor(private signalR: SignalRService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
-    console.log(`%c[Progress] subscribing — session=${this.sessionId.slice(0, 8)}…`, 'color:#34d399;font-weight:bold');
     this.sub = this.signalR.workflowEvent$.subscribe(({ sessionId, event }) => {
       if (sessionId !== this.sessionId) return;
       const step = this.steps.find(s => s.id === event.step);
       if (step) {
-        console.log(`%c[Progress] step update`, 'color:#34d399;font-weight:bold', `${step.id}: ${step.status} → ${event.status}`);
         step.status = event.status;
         step.errorMessage = event.message;
+        this.cdr.detectChanges();
       }
     });
   }

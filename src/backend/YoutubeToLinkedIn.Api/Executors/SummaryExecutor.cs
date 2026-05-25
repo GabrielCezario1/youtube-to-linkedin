@@ -27,7 +27,7 @@ public class SummaryExecutor
         _modelId = configuration["AzureOpenAI:ModelId"] ?? "gpt-4o-mini";
     }
 
-    public async Task<string> ExecuteAsync(string transcript, string sessionId, CancellationToken cancellationToken = default)
+    public async Task<string> ExecuteAsync(string transcript, string postType, string sessionId, CancellationToken cancellationToken = default)
     {
         await SendWorkflowEvent(sessionId, "in_progress");
 
@@ -40,7 +40,7 @@ public class SummaryExecutor
             var messages = new List<ChatMessage>
             {
                 new SystemChatMessage(systemPrompt),
-                new UserChatMessage(transcript)
+                new UserChatMessage($"Post type: {postType}\n\n{transcript}")
             };
 
             var options = new ChatCompletionOptions

@@ -12,7 +12,7 @@ public static class WorkflowStartEndpoint
         RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private static readonly HashSet<string> ValidPostTypes =
-        new(StringComparer.OrdinalIgnoreCase) { "storytelling", "lista-pratica", "opiniao-provocativa" };
+        new(StringComparer.OrdinalIgnoreCase) { "storytelling", "lista-pratica", "opiniao-provocativa", "noticia" };
 
     private static readonly HashSet<string> ValidModes =
         new(StringComparer.OrdinalIgnoreCase) { "automatico", "consultado" };
@@ -43,7 +43,7 @@ public static class WorkflowStartEndpoint
             {
                 var ct = cts.Token;
                 var transcript = await transcriptExecutor.ExecuteAsync(request.Url, sessionId, ct);
-                var summary = await summaryExecutor.ExecuteAsync(transcript, sessionId, ct);
+                var summary = await summaryExecutor.ExecuteAsync(transcript, request.PostType, sessionId, ct);
                 await linkedInWriterExecutor.ExecuteAsync(summary, request.PostType, sessionId, request.Mode, ct);
             }
             catch (OperationCanceledException)

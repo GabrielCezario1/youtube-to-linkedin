@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { ReplaySubject } from 'rxjs';
 import * as signalR from '@microsoft/signalr';
 import { environment } from '../../environments/environment';
@@ -34,13 +34,12 @@ export class SignalRService {
 
   workflowEvent$ = new ReplaySubject<WorkflowEventEnvelope>(20);
 
+  constructor(private zone: NgZone) {}
+
   async connect(): Promise<void> {
-    console.log('%c[SignalR] connecting…', 'color:#60a5fa;font-weight:bold');
     this.hub.on('workflowEvent', (sessionId: string, event: WorkflowEvent) => {
-      console.log(`%c[SignalR] ▶ ${event.step}/${event.status}`, 'color:#a78bfa;font-weight:bold', `session=${sessionId.slice(0, 8)}…`);
-      this.workflowEvent$.next({ sessionId, event });
+      this.zone.run(() => this.workflowEvent$.next({ sessionId, event }));
     });
     await this.hub.start();
-    console.log('%c[SignalR] ✅ connected', 'color:#4ade80;font-weight:bold');
   }
 }
